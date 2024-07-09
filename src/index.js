@@ -63,7 +63,7 @@ class Skins {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+        //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0,255,0,255]));
         this._texture = texture;
         this._rotationCenter = [320, 180];
@@ -113,68 +113,6 @@ class QuakeFragment {
 
     this.runtime = runtime;
 
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl2");
-    if (!gl) {
-      console.error("HelloWorld: WebGL not supported");
-    }
-
-    const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, fragmentShaderSource]);
-
-    const positionBufferInfo = twgl.createBufferInfoFromArrays(gl, {
-      position: {
-          numComponents: 2,
-          data: [
-            -1, -1,
-            1, -1,
-            -1, 1,
-            -1, 1,
-            1, -1,
-            1, 1,
-          ]
-      },
-    });  
-
-    this.skinId = this.runtime.renderer._nextSkinId++;
-    let SkinsClass = new Skins(this.runtime);
-    this.runtime.renderer._allSkins[this.skinId] = new SkinsClass.SimpleSkin(
-      this.skinId,
-      this.runtime.renderer,
-    );
-    this.runtime.renderer.updateDrawableSkinId(1, this.skinId);
-
-    // Draw scene.
-    this.drawScene = () => {
-      this.runtime.renderer._allSkins[this.skinId].size = this.runtime.renderer._allSkins[1].size;
-      canvas.width = this.runtime.renderer._allSkins[this.skinId].size[0]
-      canvas.height = this.runtime.renderer._allSkins[this.skinId].size[1]
-      gl.viewport(0, 0, canvas.width, canvas.height);
-
-      const texture = twgl.createTexture(gl, {
-          mag: gl.NEAREST,
-          min: gl.LINEAR,
-          src: runtime.renderer._allSkins[1]._svgImage,
-          //wrap: gl.CLAMP_TO_EDGE
-        }
-      );
-
-      const uniforms = {
-        u_resolution: [canvas.width, canvas.height],
-        u_color: [Math.random(), Math.random(), Math.random(), 1],
-        u_skin: texture
-      };
-    
-      gl.useProgram(programInfo.program);
-      twgl.setBuffersAndAttributes(gl, programInfo, positionBufferInfo);
-
-      twgl.setUniforms(programInfo, uniforms);
-      twgl.drawBufferInfo(gl, positionBufferInfo);
-
-      this.runtime.renderer._allSkins[this.skinId].setContent(canvas);
-      this.runtime.requestRedraw();
-    };
-    this.drawScene();
-
     this.initFormatMessage({
       extensionName: ["地震碎片", "Quake Fragmment"],
       me: ["我", "me"],
@@ -222,8 +160,80 @@ class QuakeFragment {
     };
   }
 
-  applyShader({ SPRITE }) {
-    this.drawScene();
+  applyShader({ SPRITE }, util) {
+    console.log(util)
+    const target = this.__getTargetByIdOrName(SPRITE, util)
+
+    const currentCostume = target.getCurrentCostume()
+
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl2");
+    if (!gl) {
+      console.error("HelloWorld: WebGL not supported");
+    }
+
+    const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, fragmentShaderSource]);
+
+    const positionBufferInfo = twgl.createBufferInfoFromArrays(gl, {
+      position: {
+          numComponents: 2,
+          data: [
+            -1, -1,
+            1, -1,
+            -1, 1,
+            -1, 1,
+            1, -1,
+            1, 1,
+          ]
+      },
+    });  
+
+    this.skinId = this.runtime.renderer._nextSkinId++;
+    let SkinsClass = new Skins(this.runtime);
+    this.runtime.renderer._allSkins[this.skinId] = new SkinsClass.SimpleSkin(
+      this.skinId,
+      this.runtime.renderer,
+    );
+    this.runtime.renderer.updateDrawableSkinId(target.drawableID, this.skinId);
+
+    const img = this.runtime.renderer._allSkins[currentCostume.skinId]._canvas
+
+    this.runtime.renderer._allSkins[this.skinId].size = this.runtime.renderer._allSkins[currentCostume.skinId].size;
+    gl.viewport(0, 0, canvas.width, canvas.height);
+
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
+    const texture = twgl.createTexture(gl, {
+        mag: gl.NEAREST,
+        min: gl.LINEAR,
+        src: img,
+        //wrap: gl.CLAMP_TO_EDGE
+      }
+    );
+
+    const uniforms = {
+      u_resolution: [canvas.width, canvas.height],
+      u_color: [Math.random(), Math.random(), Math.random(), 1],
+      u_skin: texture
+    };
+  
+    gl.useProgram(programInfo.program);
+    twgl.setBuffersAndAttributes(gl, programInfo, positionBufferInfo);
+
+    twgl.setUniforms(programInfo, uniforms);
+    twgl.drawBufferInfo(gl, positionBufferInfo);
+
+    this.runtime.renderer._allSkins[this.skinId].setContent(canvas);
+    this.runtime.requestRedraw();
+  }
+
+  __getTargetByIdOrName(name, util) {
+    if (name === '__myself__') return util.target;
+    let target = this.runtime.getSpriteTargetByName(name);
+    if (!target) {
+      target = this.runtime.getTargetById(name);
+      if (!target) return null;
+    }
+    return target;
   }
 
   __getSpriteMenu() {
