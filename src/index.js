@@ -1,6 +1,6 @@
-import * as twgl from 'twgl.js';
+import * as twgl from 'twgl.js'
 
-const extensionId = "quakeFrag";
+const extensionId = "quakeFrag"
 
 var vertexShaderSource = `#version 300 es
 
@@ -15,9 +15,9 @@ uniform vec2 u_resolution;
 // all shaders have a main function
 void main() {
   gl_Position = vec4(position, 0, 1);
-  fragUV = position;
+  fragUV = (position / 2.0) + vec2(-0.5, 0.5);
 }
-    `;
+    `
 
 var fragmentShaderSource = `#version 300 es
 
@@ -33,9 +33,9 @@ var fragmentShaderSource = `#version 300 es
     out vec4 outColor;
 
     void main() {
-      outColor = texture(u_skin, fragUV);
+      outColor = texture(u_skin, fragUV) * u_color;
     }
-    `;
+    `
 
 /*
  * By: Xeltalliv
@@ -48,91 +48,109 @@ var fragmentShaderSource = `#version 300 es
  */
 class Skins {
   constructor(runtime) {
-    this.runtime = runtime;
-    const Renderer = runtime.renderer;
-    const Skin = this.runtime.renderer.exports.Skin;
+    this.runtime = runtime
+    const Skin = this.runtime.renderer.exports.Skin
 
     class SimpleSkin extends Skin {
       constructor(id, renderer) {
-        super(id, renderer);
-        this.renderer = Renderer;
-        const gl = renderer.gl;
-        const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        super(id, renderer)
+        this.gl = renderer.gl
+        const texture = this.gl.createTexture()
+        this.gl.bindTexture(this.gl.TEXTURE_2D, texture)
+        this.gl.texParameteri(this.gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, this.gl.CLAMP_TO_EDGE)
+        this.gl.texParameteri(this.gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, this.gl.CLAMP_TO_EDGE)
+        this.gl.texParameteri(this.gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, this.gl.NEAREST)
+        this.gl.texParameteri(this.gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, this.gl.NEAREST)
         //gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
         //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0,255,0,255]));
-        this._texture = texture;
-        this._rotationCenter = [320, 180];
-        this._size = [640, 360];
+        this._texture = texture
+        this._rotationCenter = [320, 180]
+        this._size = [640, 360]
       }
       dispose() {
         if (this._texture) {
-          this.renderer.gl.deleteTexture(this._texture);
-          this._texture = null;
+          this.renderer.gl.deleteTexture(this._texture)
+          this._texture = null
         }
-        super.dispose();
+        super.dispose()
       }
       set size(value) {
-        this._size = value;
-        this._rotationCenter = [value[0] / 2, value[1] / 2];
+        this._size = value
+        this._rotationCenter = [value[0] / 2, value[1] / 2]
       }
       get size() {
-        return this._size;
+        return this._size
       }
       getTexture(scale) {
-        return this._texture || super.getTexture();
+        return this._texture || super.getTexture()
       }
       setContent(textureData) {
-        const gl = this.renderer.gl;
-        gl.bindTexture(gl.TEXTURE_2D, this._texture);
-        gl.texImage2D(
-          gl.TEXTURE_2D,
+        this.gl.bindTexture(this.gl.TEXTURE_2D, this._texture)
+        this.gl.texImage2D(
+          this.gl.TEXTURE_2D,
           0,
-          gl.RGBA,
-          gl.RGBA,
-          gl.UNSIGNED_BYTE,
+          this.gl.RGBA,
+          this.gl.RGBA,
+          this.gl.UNSIGNED_BYTE,
           textureData,
-        );
-        this.emit(Skin.Events.WasAltered);
+        )
+        this.emit(Skin.Events.WasAltered)
       }
     }
 
-    this.SimpleSkin = SimpleSkin;
+    this.SimpleSkin = SimpleSkin
   }
 }
 //End of Skins, Please keep this comment if you wanna use this code :3
 
+const canvas = document.createElement("canvas")
+const gl = canvas.getContext("webgl2")
+if (!gl) {
+  console.error("HelloWorld: WebGL not supported")
+}
+
+const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, fragmentShaderSource])
+
+const positionBuffer = twgl.createBufferInfoFromArrays(gl, {
+  position: {
+      numComponents: 2,
+      data: [
+        -1, -1,
+        1, -1,
+        -1, 1,
+        -1, 1,
+        1, -1,
+        1, 1,
+      ]
+  },
+})
+
 class QuakeFragment {
   constructor(runtime) {
-    window.TEST = this;
-    TEST.runtime = runtime;
+    window.TEST = this
 
-    this.runtime = runtime;
+    this.runtime = runtime
 
     this.initFormatMessage({
       extensionName: ["地震碎片", "Quake Fragmment"],
       me: ["我", "me"],
-    });
+    })
   }
   initFormatMessage(l10n) {
-    const res = { "zh-cn": {}, en: {} };
+    const res = { "zh-cn": {}, en: {} }
     Object.entries(l10n).forEach(([id, msgs]) => {
       const ID = `${extensionId}.${id}`;
-      [res["zh-cn"][ID], res.en[ID]] = msgs;
-    });
-    const _formatMessage = this.runtime.getFormatMessage(res);
+      [res["zh-cn"][ID], res.en[ID]] = msgs
+    })
+    const _formatMessage = this.runtime.getFormatMessage(res)
     this.fm = (id) => {
-      const ID = `${extensionId}.${id}`;
+      const ID = `${extensionId}.${id}`
       return _formatMessage({
         ID,
         default: ID,
         description: ID,
-      });
-    };
+      })
+    }
   }
   getInfo() {
     return {
@@ -157,7 +175,7 @@ class QuakeFragment {
           items: "__spriteMenuWithMyself",
         },
       },
-    };
+    }
   }
 
   applyShader({ SPRITE }, util) {
@@ -166,112 +184,95 @@ class QuakeFragment {
 
     const currentCostume = target.getCurrentCostume()
 
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl2");
-    if (!gl) {
-      console.error("HelloWorld: WebGL not supported");
-    }
-
-    const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, fragmentShaderSource]);
-
-    const positionBufferInfo = twgl.createBufferInfoFromArrays(gl, {
-      position: {
-          numComponents: 2,
-          data: [
-            -1, -1,
-            1, -1,
-            -1, 1,
-            -1, 1,
-            1, -1,
-            1, 1,
-          ]
-      },
-    });  
-
-    this.skinId = this.runtime.renderer._nextSkinId++;
-    let SkinsClass = new Skins(this.runtime);
-    this.runtime.renderer._allSkins[this.skinId] = new SkinsClass.SimpleSkin(
-      this.skinId,
+    let skinId = this.runtime.renderer._nextSkinId++
+    let SkinsClass = new Skins(this.runtime)
+    let skin = new SkinsClass.SimpleSkin(
+      skinId,
       this.runtime.renderer,
-    );
-    this.runtime.renderer.updateDrawableSkinId(target.drawableID, this.skinId);
+    )
+    this.runtime.renderer._allSkins[skinId] = skin;
+    this.runtime.renderer.updateDrawableSkinId(target.drawableID, skinId)
+    skin.size = currentCostume.size
 
-    const img = this.runtime.renderer._allSkins[currentCostume.skinId]._canvas
+    const img = new Image()
+    img.src = currentCostume.asset.encodeDataURI()
 
-    this.runtime.renderer._allSkins[this.skinId].size = this.runtime.renderer._allSkins[currentCostume.skinId].size;
-    gl.viewport(0, 0, canvas.width, canvas.height);
+    canvas.width = this.runtime.stageWidth
+    canvas.height = this.runtime.stageHeight
+    gl.viewport(0, 0, canvas.width, canvas.height)
 
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-    const texture = twgl.createTexture(gl, {
-        mag: gl.NEAREST,
-        min: gl.LINEAR,
-        src: img,
-        //wrap: gl.CLAMP_TO_EDGE
-      }
-    );
+    const textureOptions = {
+      //mag: gl.NEAREST,
+      //min: gl.LINEAR,
+      src: img,
+      //wrap: gl.CLAMP_TO_EDGE
+    }
+    const texture = twgl.createTexture(gl, textureOptions)
 
     const uniforms = {
       u_resolution: [canvas.width, canvas.height],
       u_color: [Math.random(), Math.random(), Math.random(), 1],
       u_skin: texture
-    };
+    }
   
-    gl.useProgram(programInfo.program);
-    twgl.setBuffersAndAttributes(gl, programInfo, positionBufferInfo);
+    gl.useProgram(programInfo.program)
+    twgl.setBuffersAndAttributes(gl, programInfo, positionBuffer)
 
-    twgl.setUniforms(programInfo, uniforms);
-    twgl.drawBufferInfo(gl, positionBufferInfo);
+    twgl.setUniforms(programInfo, uniforms)
+    twgl.drawBufferInfo(gl, positionBuffer)
 
-    this.runtime.renderer._allSkins[this.skinId].setContent(canvas);
-    this.runtime.requestRedraw();
+    skin.setContent(canvas)
+    this.runtime.requestRedraw()
   }
+  
 
   __getTargetByIdOrName(name, util) {
-    if (name === '__myself__') return util.target;
-    let target = this.runtime.getSpriteTargetByName(name);
+    if (name === '__myself__') return util.target
+    let target = this.runtime.getSpriteTargetByName(name)
     if (!target) {
-      target = this.runtime.getTargetById(name);
-      if (!target) return null;
+      target = this.runtime.getTargetById(name)
+      if (!target) return null
     }
-    return target;
+    return target
   }
 
   __getSpriteMenu() {
-    const { targets } = this.runtime;
+    const { targets } = this.runtime
     // 跳过舞台
     const menu = targets
       .filter((target) => !target.isStage && target.isOriginal)
       .map((target) => ({
         text: target.sprite.name,
         value: target.sprite.name,
-      }));
+      }))
     // 空检查
     if (menu.length === 0) {
       menu.push({
         text: "-",
         value: "empty",
-      });
+      })
     }
-    return menu;
+    return menu
   }
 
   __spriteMenuWithMyself() {
-    const menu = this.__getSpriteMenu();
-    if (!this.runtime._editingTarget) return menu;
+    const menu = this.__getSpriteMenu()
+    if (!this.runtime._editingTarget) return menu
     // 当前角色名称
-    const editingTargetName = this.runtime._editingTarget.sprite.name;
+    const editingTargetName = this.runtime._editingTarget.sprite.name
     // 从列表删除自己
-    const index = menu.findIndex((item) => item.value === editingTargetName);
+    const index = menu.findIndex((item) => item.value === editingTargetName)
     if (index !== -1) {
-      menu.splice(index, 1);
+      menu.splice(index, 1)
     }
     // 列表第一项插入“自己”
-    if (this.runtime._editingTarget.isStage) return menu;
+    if (this.runtime._editingTarget.isStage) return menu
     menu.unshift({
       text: this.fm("me"),
       value: "__myself__",
-    });
-    return menu;
+    })
+    return menu
   }
 }
 
@@ -297,4 +298,4 @@ window.tempExt = {
       "quakefragment.description": "Better way to load fragment shaders",
     },
   },
-};
+}
