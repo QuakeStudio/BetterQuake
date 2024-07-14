@@ -167,7 +167,7 @@ class QuakeFragment {
     const target = this.__getTargetByIdOrName(SPRITE, util)
     const currentCostume = target.getCurrentCostume()
 
-    this.__check_shaderedObjects(target, currentCostume)
+    this.__check_shaderedSprites(target, currentCostume)
     const shaderedObject = this.shaderedSprites[target.name]
     const gl = shaderedObject.gl
     const canvas = shaderedObject.canvas
@@ -208,7 +208,7 @@ class QuakeFragment {
     this.runtime.requestRedraw()
   }
 
-  __check_shaderedObjects(target, currentCostume) {
+  __check_shaderedSprites(target, currentCostume) {
 
     if (this.shaderedSprites[target.name]) return;
 
