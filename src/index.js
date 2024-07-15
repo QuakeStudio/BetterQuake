@@ -299,6 +299,137 @@ class QuakeFragment {
     })
     return menu
   }
+
+  calculateOBBCorners(obj) {
+    const halfWidth = obj.size[0] / 2;
+    const halfHeight = obj.size[1] / 2;
+
+    const cosTheta = Math.cos(obj.direction);
+    const sinTheta = Math.sin(obj.direction);
+
+    // Calculate the four corners of the OBB
+    const corners = [
+        {
+            x: obj.x + cosTheta * halfWidth - sinTheta * halfHeight,
+            y: obj.y + sinTheta * halfWidth + cosTheta * halfHeight,
+        },
+        {
+            x: obj.x + cosTheta * halfWidth + sinTheta * halfHeight,
+            y: obj.y + sinTheta * halfWidth - cosTheta * halfHeight,
+        },
+        {
+            x: obj.x - cosTheta * halfWidth - sinTheta * halfHeight,
+            y: obj.y - sinTheta * halfWidth + cosTheta * halfHeight,
+        },
+        {
+            x: obj.x - cosTheta * halfWidth + sinTheta * halfHeight,
+            y: obj.y - sinTheta * halfWidth - cosTheta * halfHeight,
+        },
+    ];
+
+    return corners;
+  }
+
+  checkCollision(obj1, obj2) {
+    const corners1 = calculateOBBCorners(obj1);
+    const corners2 = calculateOBBCorners(obj2);
+
+    // Check if any corner from obj1 overlaps with any corner from obj2
+    for (const corner1 of corners1) {
+        for (const corner2 of corners2) {
+            if (corner1.x === corner2.x && corner1.y === corner2.y) {
+                return true; // Collision detected
+            }
+        }
+    }
+
+    return false; // No collision
+  }
+
+  applyPatches() {
+    this.runtime.renderer.QuakeFragment = this;
+    patch(this.runtime.renderer, {
+      isTouchingDrawables(og, drawableID, candidateIDs = this._drawList) {
+        const dr = this._allDrawables[drawableID];
+        console.log(dr)
+
+        const candidates = candidateIDs.filter(id => this._allDrawables[id]);
+        for (const candidate of candidates) {
+          if (this.runtime.renderer.QuakeFragment.checkCollision(dr, this._allDrawables[candidate]))
+            return true;
+        }
+
+        return og(drawableID, candidateIDs.filter(id => !(this._allDrawables[drawableID])));
+      },
+      
+      /*
+      pick(og, centerX, centerY, touchWidth, touchHeight, candidateIDs) {
+        const pick2d = og(centerX, centerY, touchWidth, touchHeight, candidateIDs);
+        if (pick2d !== -1) return pick2d;
+        
+        const threed = Drawable.threed;
+        if (!threed.raycaster) return false;
+
+        const bounds = this.clientSpaceToScratchBounds(centerX, centerY, touchWidth, touchHeight);
+        if (bounds.left === -Infinity || bounds.bottom === -Infinity) {
+            return false;
+        }
+
+        const candidates =
+          (candidateIDs || this._drawList).map(id => this._allDrawables[id]).filter(dr => dr[IN_3D]);
+        if (candidates.length <= 0) return -1;
+
+        const scratchCenterX = (bounds.left + bounds.right) / this._gl.canvas.clientWidth;
+        const scratchCenterY = (bounds.top + bounds.bottom) / this._gl.canvas.clientHeight;
+        threed.raycaster.setFromCamera(new THREE.Vector2(scratchCenterX, scratchCenterY), threed.camera);
+
+        const object = threed.raycaster.intersectObject(threed.scene, true)[0]?.object;
+        if (!object) return -1;
+        const drawable = candidates.find(c => (c[IN_3D] && c[OBJECT] === object));
+        if (!drawable) return -1;
+        return drawable._id;
+      },
+      drawableTouching(og, drawableID, centerX, centerY, touchWidth, touchHeight) {
+        const drawable = this._allDrawables[drawableID];
+        if (!drawable) {
+            return false;
+        }
+        if (!drawable[IN_3D]) {
+          return og(drawableID, centerX, centerY, touchWidth, touchHeight);
+        }
+
+        const threed = Drawable.threed;
+        if (!threed.raycaster) return false;
+
+        const bounds = this.clientSpaceToScratchBounds(centerX, centerY, touchWidth, touchHeight);
+        const scratchCenterX = (bounds.left + bounds.right) / this._gl.canvas.clientWidth;
+        const scratchCenterY = (bounds.top + bounds.bottom) / this._gl.canvas.clientHeight;
+        threed.raycaster.setFromCamera(new THREE.Vector2(scratchCenterX, scratchCenterY), threed.camera);
+
+        const intersect = (threed.raycaster.intersectObject(threed.scene, true));
+        const object = intersect[0]?.object;
+        return object === drawable[OBJECT];
+      },
+      extractDrawableScreenSpace(og, drawableID) {
+        const drawable = this._allDrawables[drawableID];
+        if (!drawable)
+          throw new Error(`Could not extract drawable with ID ${drawableID}; it does not exist`);
+        if (!drawable[IN_3D])
+          return og(drawableID);
+
+        // Draw the sprite to the 3D drawable then extract it
+        const threed = Drawable.threed;
+        threed.renderer.render(drawable[OBJECT], threed.camera);
+        this._allSkins[threed.threeSkinId].setContent(
+          threed.renderer.domElement
+        );
+        const extracted = og(threed.threeDrawableId);
+        threed.updateRenderer();
+        return extracted;
+      },
+      */
+    });
+  }
 }
 
 window.tempExt = {
