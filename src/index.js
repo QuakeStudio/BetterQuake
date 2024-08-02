@@ -3,6 +3,33 @@ import * as twgl from 'twgl.js'
 const icon = "data:image/svg+xml,%3Csvg%20width%3D%22129%22%20height%3D%22129%22%20viewBox%3D%220%200%20129%20129%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M75%2067.1928H80V80.1928H75V67.1928Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M55.0731%2021.02L70.7722%2030.8701L60.6256%20108.129L43.464%20109.415L55.0731%2021.02Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M106.059%2046.3074L92.7209%2055.4334L53.5113%2034.7133L54.8128%2021.0354L106.059%2046.3074Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M102.549%2072.9834L89.2109%2079.3015L50.3659%2061.3893L51.6674%2047.7114L102.549%2072.9834Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M55.0731%2014L70.7722%2023.8501L60.6256%20101.109L43.464%20102.395L55.0731%2014Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M106.059%2039.2874L92.7209%2048.4134L53.5113%2027.6933L54.8128%2014.0154L106.059%2039.2874Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M102.549%2065.9634L89.2109%2072.2814L50.3659%2054.3693L51.6674%2040.6914L102.549%2065.9634Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M55.0731%2018.212L70.7722%2028.0621L60.6256%20105.321L43.464%20106.607L55.0731%2018.212Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M106.059%2043.4994L92.7209%2052.6254L53.5113%2031.9053L54.8128%2018.2274L106.059%2043.4994Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M102.549%2070.1754L89.2109%2076.4935L50.3659%2058.5813L51.6674%2044.9034L102.549%2070.1754Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M92%2070.1928H97V97.1928H92V70.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M69%2014.1928H72V29.1928H69V14.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M21%2018.1928H29V52.1928H21V18.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M37%2097.1928H47V115.193H37V97.1928Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M90%2018.1928H100V39.1928H90V18.1928Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M42%2039.1928H53V64.1928H42V39.1928Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3C%2Fsvg%3E"
 const extensionId = "quakeFrag"
 
+const PATCHES_ID = "__patches_quakefragment";
+const patch = (obj, functions) => {
+  if (obj[PATCHES_ID]) return;
+  obj[PATCHES_ID] = {};
+  for (const name in functions) {
+    const original = obj[name];
+    obj[PATCHES_ID][name] = obj[name];
+    if (original) {
+      obj[name] = function(...args) {
+        const callOriginal = (...ogArgs) => original.call(this, ...ogArgs);
+        return functions[name].call(this, callOriginal, ...args);
+      };
+    } else {
+      obj[name] = function (...args) {
+        return functions[name].call(this, () => {}, ...args);
+      }
+    }
+  }
+}
+const unpatch = (obj) => {
+  if (!obj[PATCHES_ID]) return;
+  for (const name in obj[PATCHES_ID]) {
+    obj[name] = obj[PATCHES_ID][name];
+  }
+  delete obj[PATCHES_ID];
+}
+
 var vertexShaderSource = `#version 300 es
 
 // an attribute is an input (in) to a vertex shader.
@@ -110,6 +137,8 @@ class QuakeFragment {
 
     this.runtime = runtime
     this.shaderedSprites = []
+
+    this.applyPatches()
 
     this.initFormatMessage({
       extensionName: ["地震碎片", "Quake Fragmment"],
@@ -301,8 +330,8 @@ class QuakeFragment {
   }
 
   calculateOBBCorners(obj) {
-    const halfWidth = obj.size[0] / 2;
-    const halfHeight = obj.size[1] / 2;
+    const halfWidth = obj._skinScale[0] / 2;
+    const halfHeight = obj._skinScale[1] / 2;
 
     const cosTheta = Math.cos(obj.direction);
     const sinTheta = Math.sin(obj.direction);
@@ -331,8 +360,8 @@ class QuakeFragment {
   }
 
   checkCollision(obj1, obj2) {
-    const corners1 = calculateOBBCorners(obj1);
-    const corners2 = calculateOBBCorners(obj2);
+    const corners1 = this.calculateOBBCorners(obj1);
+    const corners2 = this.calculateOBBCorners(obj2);
 
     // Check if any corner from obj1 overlaps with any corner from obj2
     for (const corner1 of corners1) {
@@ -351,17 +380,16 @@ class QuakeFragment {
     patch(this.runtime.renderer, {
       isTouchingDrawables(og, drawableID, candidateIDs = this._drawList) {
         const dr = this._allDrawables[drawableID];
-        console.log(dr)
 
         const candidates = candidateIDs.filter(id => this._allDrawables[id]);
         for (const candidate of candidates) {
-          if (this.runtime.renderer.QuakeFragment.checkCollision(dr, this._allDrawables[candidate]))
+          if (this.QuakeFragment.checkCollision(dr, this._allDrawables[candidate]))
             return true;
         }
 
         return og(drawableID, candidateIDs.filter(id => !(this._allDrawables[drawableID])));
       },
-    });
+    })
   }
 }
 
