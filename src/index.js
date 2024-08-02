@@ -3,6 +3,7 @@ import * as twgl from 'twgl.js'
 const icon = "data:image/svg+xml,%3Csvg%20width%3D%22129%22%20height%3D%22129%22%20viewBox%3D%220%200%20129%20129%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M75%2067.1928H80V80.1928H75V67.1928Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M55.0731%2021.02L70.7722%2030.8701L60.6256%20108.129L43.464%20109.415L55.0731%2021.02Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M106.059%2046.3074L92.7209%2055.4334L53.5113%2034.7133L54.8128%2021.0354L106.059%2046.3074Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M102.549%2072.9834L89.2109%2079.3015L50.3659%2061.3893L51.6674%2047.7114L102.549%2072.9834Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M55.0731%2014L70.7722%2023.8501L60.6256%20101.109L43.464%20102.395L55.0731%2014Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M106.059%2039.2874L92.7209%2048.4134L53.5113%2027.6933L54.8128%2014.0154L106.059%2039.2874Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M102.549%2065.9634L89.2109%2072.2814L50.3659%2054.3693L51.6674%2040.6914L102.549%2065.9634Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M55.0731%2018.212L70.7722%2028.0621L60.6256%20105.321L43.464%20106.607L55.0731%2018.212Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M106.059%2043.4994L92.7209%2052.6254L53.5113%2031.9053L54.8128%2018.2274L106.059%2043.4994Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M102.549%2070.1754L89.2109%2076.4935L50.3659%2058.5813L51.6674%2044.9034L102.549%2070.1754Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M92%2070.1928H97V97.1928H92V70.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M69%2014.1928H72V29.1928H69V14.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M21%2018.1928H29V52.1928H21V18.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M37%2097.1928H47V115.193H37V97.1928Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M90%2018.1928H100V39.1928H90V18.1928Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M42%2039.1928H53V64.1928H42V39.1928Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3C%2Fsvg%3E"
 const extensionId = "quakeFrag"
 
+const IS_SHADERED = "isQuakeFragmentShadered"
 const PATCHES_ID = "__patches_quakefragment";
 const patch = (obj, functions) => {
   if (obj[PATCHES_ID]) return;
@@ -43,7 +44,7 @@ uniform vec2 u_resolution;
 // all shaders have a main function
 void main() {
   gl_Position = vec4(position, 0, 1);
-  fragUV = (position / 2.0) + vec2(-0.5, 0.5);
+  fragUV = (position / 2.0) + vec2(0.5, 0.5);
 }
     `
 
@@ -197,7 +198,7 @@ class QuakeFragment {
     const currentCostume = target.getCurrentCostume()
 
     this.__check_shaderedSprites(target, currentCostume)
-    const shaderedObject = this.shaderedSprites[target.name]
+    const shaderedObject = this.shaderedSprites[target.id]
     const gl = shaderedObject.gl
     const canvas = shaderedObject.canvas
     const skin = shaderedObject.skin
@@ -271,7 +272,10 @@ class QuakeFragment {
     this.runtime.renderer.updateDrawableSkinId(target.drawableID, skinId)
     skin.size = currentCostume.size
 
-    this.shaderedSprites[target.name] = {
+    this.runtime.renderer._allDrawables[target.drawableID][IS_SHADERED] = true
+    console.log(this.runtime.renderer._allDrawables[target.drawableID])
+
+    this.shaderedSprites[target.id] = {
       "drawableID": target.drawableID,
       "skinId": skinId,
       "skin": skin,
@@ -363,12 +367,14 @@ class QuakeFragment {
     const corners1 = this.calculateOBBCorners(obj1);
     const corners2 = this.calculateOBBCorners(obj2);
 
-    // Check if any corner from obj1 overlaps with any corner from obj2
-    for (const corner1 of corners1) {
-        for (const corner2 of corners2) {
-            if (corner1.x === corner2.x && corner1.y === corner2.y) {
-                return true; // Collision detected
-            }
+    // Check distance along each axis independently
+    for (let i = 0; i < 4; i++) {
+        const dx = corners1[i].x - corners2[i].x;
+        const dy = corners1[i].y - corners2[i].y;
+
+        // Use a threshold (e.g., 1e-6) to account for floating-point precision
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
+            return true; // Collision detected
         }
     }
 
@@ -381,13 +387,12 @@ class QuakeFragment {
       isTouchingDrawables(og, drawableID, candidateIDs = this._drawList) {
         const dr = this._allDrawables[drawableID];
 
-        const candidates = candidateIDs.filter(id => this._allDrawables[id]);
-        for (const candidate of candidates) {
+        for (const candidate of candidateIDs) {
           if (this.QuakeFragment.checkCollision(dr, this._allDrawables[candidate]))
             return true;
         }
 
-        return og(drawableID, candidateIDs.filter(id => !(this._allDrawables[drawableID])));
+        return og(drawableID, candidateIDs.filter(id => !(this._allDrawables[drawableID][IS_SHADERED])));
       },
     })
   }
