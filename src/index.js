@@ -123,6 +123,7 @@ class Skins {
           this.gl.UNSIGNED_BYTE,
           textureData,
         )
+        this._silhouette.update(textureData)
         this.emit(Skin.Events.WasAltered)
       }
     }
@@ -138,8 +139,6 @@ class QuakeFragment {
 
     this.runtime = runtime
     this.shaderedSprites = []
-
-    this.applyPatches()
 
     this.initFormatMessage({
       extensionName: ["地震碎片", "Quake Fragmment"],
@@ -272,9 +271,6 @@ class QuakeFragment {
     this.runtime.renderer.updateDrawableSkinId(target.drawableID, skinId)
     skin.size = currentCostume.size
 
-    this.runtime.renderer._allDrawables[target.drawableID][IS_SHADERED] = true
-    console.log(this.runtime.renderer._allDrawables[target.drawableID])
-
     this.shaderedSprites[target.id] = {
       "drawableID": target.drawableID,
       "skinId": skinId,
@@ -331,70 +327,6 @@ class QuakeFragment {
       value: "__myself__",
     })
     return menu
-  }
-
-  calculateOBBCorners(obj) {
-    const halfWidth = obj._skinScale[0] / 2;
-    const halfHeight = obj._skinScale[1] / 2;
-
-    const cosTheta = Math.cos(obj.direction);
-    const sinTheta = Math.sin(obj.direction);
-
-    // Calculate the four corners of the OBB
-    const corners = [
-        {
-            x: obj.x + cosTheta * halfWidth - sinTheta * halfHeight,
-            y: obj.y + sinTheta * halfWidth + cosTheta * halfHeight,
-        },
-        {
-            x: obj.x + cosTheta * halfWidth + sinTheta * halfHeight,
-            y: obj.y + sinTheta * halfWidth - cosTheta * halfHeight,
-        },
-        {
-            x: obj.x - cosTheta * halfWidth - sinTheta * halfHeight,
-            y: obj.y - sinTheta * halfWidth + cosTheta * halfHeight,
-        },
-        {
-            x: obj.x - cosTheta * halfWidth + sinTheta * halfHeight,
-            y: obj.y - sinTheta * halfWidth - cosTheta * halfHeight,
-        },
-    ];
-
-    return corners;
-  }
-
-  checkCollision(obj1, obj2) {
-    const corners1 = this.calculateOBBCorners(obj1);
-    const corners2 = this.calculateOBBCorners(obj2);
-
-    // Check distance along each axis independently
-    for (let i = 0; i < 4; i++) {
-        const dx = corners1[i].x - corners2[i].x;
-        const dy = corners1[i].y - corners2[i].y;
-
-        // Use a threshold (e.g., 1e-6) to account for floating-point precision
-        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) {
-            return true; // Collision detected
-        }
-    }
-
-    return false; // No collision
-  }
-
-  applyPatches() {
-    this.runtime.renderer.QuakeFragment = this;
-    patch(this.runtime.renderer, {
-      isTouchingDrawables(og, drawableID, candidateIDs = this._drawList) {
-        const dr = this._allDrawables[drawableID];
-
-        for (const candidate of candidateIDs) {
-          if (this.QuakeFragment.checkCollision(dr, this._allDrawables[candidate]))
-            return true;
-        }
-
-        return og(drawableID, candidateIDs.filter(id => !(this._allDrawables[drawableID][IS_SHADERED])));
-      },
-    })
   }
 }
 
