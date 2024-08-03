@@ -31,40 +31,37 @@ const unpatch = (obj) => {
   delete obj[PATCHES_ID];
 }
 
-var vertexShaderSource = `#version 300 es
+var vertexShaderSource = `
+#version 300 es
 
 // an attribute is an input (in) to a vertex shader.
 // It will receive data from a buffer
 in vec2 position;
-out vec2 fragUV;
-
-// Used to pass in the resolution of the canvas
-uniform vec2 u_resolution;
+out vec2 vUv;
 
 // all shaders have a main function
 void main() {
   gl_Position = vec4(position, 0, 1);
-  fragUV = (position / 2.0) + vec2(0.5, 0.5);
+  vUv = (position / 2.0) + vec2(0.5, 0.5);
 }
     `
 
-var fragmentShaderSource = `#version 300 es
+var fragmentShaderSource = `
+  #version 300 es
+  #ifdef GL_ES
+  precision mediump float;
+  #endif
 
-    // fragment shaders don't have a default precision so we need
-    // to pick one. highp is a good default. It means "high precision"
-    precision highp float;
-    in vec2 fragUV;
+  in vec2 vUv;
+  out vec4 fragColor;
+  uniform sampler2D tDiffuse;
 
-    uniform vec4 u_color;
-    uniform sampler2D u_skin;
+  uniform vec4 u_color;
 
-    // we need to declare an output for the fragment shader
-    out vec4 outColor;
-
-    void main() {
-      outColor = texture(u_skin, fragUV) * u_color;
-    }
-    `
+  void main() {
+    fragColor = texture(tDiffuse, vUv) * u_color;
+  }
+`
 
 /*
  * By: Xeltalliv
@@ -139,6 +136,36 @@ class QuakeFragment {
 
     this.runtime = runtime
     this.shaderedSprites = []
+    this.animationFrameID;
+
+    runtime.on('PROJECT_START', () => {
+      this.animationFrameID = requestAnimationFrame(render)
+    });
+
+    runtime.on('PROJECT_STOP_ALL', () => {
+      cancelAnimationFrame(this.animationFrameID)
+    });
+
+    const render = (time) => {
+      for (let i in this.shaderedSprites) {
+        const shaderedObject = this.shaderedSprites[i]
+        const gl = shaderedObject.gl
+
+        const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, shaderedObject.fragmentShader])
+  
+        gl.useProgram(programInfo.program)
+        twgl.setBuffersAndAttributes(gl, programInfo, shaderedObject.positionBuffer)
+
+        shaderedObject.uniforms.time = time / 100
+
+        twgl.setUniforms(programInfo, shaderedObject.uniforms)
+        twgl.drawBufferInfo(gl, shaderedObject.positionBuffer)
+
+        shaderedObject.skin.setContent(shaderedObject.canvas)
+      }
+      this.runtime.requestRedraw()
+      this.animationFrameID = requestAnimationFrame(render)
+    }
 
     this.initFormatMessage({
       extensionName: ["地震碎片", "Quake Fragmment"],
@@ -174,8 +201,12 @@ class QuakeFragment {
         {
           opcode: "applyShader",
           blockType: Scratch.BlockType.COMMAND,
-          text: "Apply shader to [SPRITE]",
+          text: "Apply [SHADER] to [SPRITE]",
           arguments: {
+            SHADER: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "SHADER_MENU"
+            },
             SPRITE: {
               type: Scratch.ArgumentType.STRING,
               menu: "SPRITE_MENU_WITH_MYSELF",
@@ -188,11 +219,15 @@ class QuakeFragment {
           acceptReporters: true,
           items: "__spriteMenuWithMyself",
         },
+        SHADER_MENU: {
+          acceptReporters: true,
+          items: "__shaderList",
+        }
       },
     }
   }
 
-  applyShader({ SPRITE }, util) {
+  applyShader({ SHADER, SPRITE }, util) {
     const target = this.__getTargetByIdOrName(SPRITE, util)
     const currentCostume = target.getCurrentCostume()
 
@@ -203,8 +238,10 @@ class QuakeFragment {
     const skin = shaderedObject.skin
     const positionBuffer = shaderedObject.positionBuffer
 
-    const img = new Image()
-    img.src = currentCostume.asset.encodeDataURI()
+    const asset = this.runtime.getGandiAssetContent(SHADER);
+    if (asset) {
+      shaderedObject.fragmentShader = asset.decodeText();
+    }
 
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
@@ -214,23 +251,23 @@ class QuakeFragment {
     const textureOptions = {
       //mag: gl.NEAREST,
       //min: gl.LINEAR,
-      src: img,
+      src: this.__getCanvasFromSkin(shaderedObject.oldSkin),
       //wrap: gl.CLAMP_TO_EDGE
     }
-    const texture = twgl.createTexture(gl, textureOptions)
+    shaderedObject.texture = twgl.createTexture(gl, textureOptions)
 
-    const uniforms = {
-      u_resolution: [canvas.width, canvas.height],
+    shaderedObject.uniforms = {
+      time: 0,
       u_color: [Math.random(), Math.random(), Math.random(), 1],
-      u_skin: texture
+      tDiffuse: shaderedObject.texture
     }
 
-    const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, fragmentShaderSource])
+    const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, shaderedObject.fragmentShader])
   
     gl.useProgram(programInfo.program)
     twgl.setBuffersAndAttributes(gl, programInfo, positionBuffer)
 
-    twgl.setUniforms(programInfo, uniforms)
+    twgl.setUniforms(programInfo, shaderedObject.uniforms)
     twgl.drawBufferInfo(gl, positionBuffer)
 
     skin.setContent(canvas)
@@ -239,7 +276,7 @@ class QuakeFragment {
 
   __check_shaderedSprites(target, currentCostume) {
 
-    if (this.shaderedSprites[target.name]) return;
+    if (this.shaderedSprites[target.id]) return;
 
     const canvas = document.createElement("canvas")
     const gl = canvas.getContext("webgl2")
@@ -268,13 +305,17 @@ class QuakeFragment {
       this.runtime.renderer,
     )
     this.runtime.renderer._allSkins[skinId] = skin;
+    const oldSkin = this.runtime.renderer._allDrawables[target.drawableID].skin
     this.runtime.renderer.updateDrawableSkinId(target.drawableID, skinId)
     skin.size = currentCostume.size
+
+    console.log(target)
 
     this.shaderedSprites[target.id] = {
       "drawableID": target.drawableID,
       "skinId": skinId,
       "skin": skin,
+      "oldSkin": oldSkin,
       "canvas": canvas,
       "gl": gl,
       "positionBuffer": positionBuffer
@@ -327,6 +368,96 @@ class QuakeFragment {
       value: "__myself__",
     })
     return menu
+  }
+
+  __shaderList() {
+    const list = this.runtime
+      .getGandiAssetsFileList("glsl")
+      .map((item) => item.fullName);
+    if (list.length < 1) {
+      list.push("没有文件 empty");
+    }
+
+    return list;
+  }
+
+  // thanks stackoverflow
+  // https://stackoverflow.com/a/18804083
+  __getCanvasFromTexture(gl, texture, width, height, dx, dy) {
+    const framebuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+
+    const data = new Uint8Array(width * height * 4);
+    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, data);
+
+    gl.deleteFramebuffer(framebuffer);
+
+    const imageData = new ImageData(width, height);
+    imageData.data.set(data);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+
+    context.putImageData(imageData, dx, dy);
+
+    return canvas;
+  }
+
+  //Thanks CST :3
+  //https://github.com/CST1229/turbowarp-extensions/blob/3d/extensions/CST1229/3d.js
+  __getCanvasFromSkin(skin) {
+    const emptyCanvas = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1;
+      canvas.height = 1;
+      return canvas;
+    }
+
+    switch (skin.constructor) {
+      case this.runtime.renderer.exports.BitmapSkin: {
+        if (skin._textureSize[0] < 1 || skin._textureSize[1] < 1)
+          return emptyCanvas();
+        return this.__getCanvasFromTexture(
+          this.runtime.renderer.gl,
+          skin.getTexture(),
+          skin._textureSize[0] * 2,
+          skin._textureSize[1] * 2,
+          skin._textureSize[0] / 2,
+          skin._textureSize[1] / 2
+        );
+      }
+      case this.runtime.renderer.exports.SVGSkin: {
+        // code copy-pasted from scratch-render
+        const INDEX_OFFSET = 8;
+
+        const textureScale = 200;
+
+        const scaleMax = textureScale ? Math.max(Math.abs(textureScale), Math.abs(textureScale)) : 100;
+        const requestedScale = Math.min(scaleMax / 100, skin._maxTextureScale);
+        const mipLevel = Math.max(Math.ceil(Math.log2(requestedScale)) + INDEX_OFFSET, 0);
+        const mipScale = Math.pow(2, mipLevel - INDEX_OFFSET);
+
+        const sizeX = Math.ceil(skin._size[0] * mipScale);
+        const sizeY = Math.ceil(skin._size[1] * mipScale)
+        if (sizeX < 1 || sizeY < 1)
+          return emptyCanvas();
+
+        return this.__getCanvasFromTexture(
+          this.runtime.renderer.gl,
+          skin.getTexture([textureScale, textureScale]),
+          sizeX,
+          sizeY,
+          0,
+          0
+        );
+      }
+      default:
+        console.error("Could not get skin image data:", skin);
+        throw new TypeError("Could not get skin image data");
+    }
   }
 }
 
