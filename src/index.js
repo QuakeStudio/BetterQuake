@@ -31,36 +31,111 @@ const unpatch = (obj) => {
   delete obj[PATCHES_ID];
 }
 
-var vertexShaderSource = `
+const vertexShaderSource = `
 #version 300 es
+#ifdef GL_ES
+precision mediump float;
+#endif
 
-// an attribute is an input (in) to a vertex shader.
-// It will receive data from a buffer
-in vec2 position;
+#ifdef DRAW_MODE_line
+uniform vec2 u_stageSize;
+in vec2 a_lineThicknessAndLength;
+in vec4 a_penPoints;
+in vec4 a_lineColor;
+
+out vec4 v_lineColor;
+out float v_lineThickness;
+out float v_lineLength;
+out vec4 v_penPoints;
+
+// Add this to divisors to prevent division by 0, which results in NaNs propagating through calculations.
+// Smaller values can cause problems on some mobile devices.
+const float epsilon = 1e-3;
+#endif
+
+#if !(defined(DRAW_MODE_line) || defined(DRAW_MODE_background))
+uniform mat4 u_projectionMatrix;
+uniform mat4 u_modelMatrix;
+in vec2 a_texCoord;
+#endif
+
+in vec2 a_position;
+
 out vec2 vUv;
 
-// all shaders have a main function
 void main() {
-  gl_Position = vec4(position, 0, 1);
-  vUv = (position / 2.0) + vec2(0.5, 0.5);
+	#ifdef DRAW_MODE_line
+	// Calculate a rotated ("tight") bounding box around the two pen points.
+	// Yes, we're doing this 6 times (once per vertex), but on actual GPU hardware,
+	// it's still faster than doing it in JS combined with the cost of uniformMatrix4fv.
+
+	// Expand line bounds by sqrt(2) / 2 each side-- this ensures that all antialiased pixels
+	// fall within the quad, even at a 45-degree diagonal
+	vec2 position = a_position;
+	float expandedRadius = (a_lineThicknessAndLength.x * 0.5) + 1.4142135623730951;
+
+	// The X coordinate increases along the length of the line. It's 0 at the center of the origin point
+	// and is in pixel-space (so at n pixels along the line, its value is n).
+	vUv.x = mix(0.0, a_lineThicknessAndLength.y + (expandedRadius * 2.0), a_position.x) - expandedRadius;
+	// The Y coordinate is perpendicular to the line. It's also in pixel-space.
+	vUv.y = ((a_position.y - 0.5) * expandedRadius) + 0.5;
+
+	position.x *= a_lineThicknessAndLength.y + (2.0 * expandedRadius);
+	position.y *= 2.0 * expandedRadius;
+
+	// 1. Center around first pen point
+	position -= expandedRadius;
+
+	// 2. Rotate quad to line angle
+	vec2 pointDiff = a_penPoints.zw;
+	// Ensure line has a nonzero length so it's rendered properly
+	// As long as either component is nonzero, the line length will be nonzero
+	// If the line is zero-length, give it a bit of horizontal length
+	pointDiff.x = (abs(pointDiff.x) < epsilon && abs(pointDiff.y) < epsilon) ? epsilon : pointDiff.x;
+	// The "normalized" vector holds rotational values equivalent to sine/cosine
+	// We're applying the standard rotation matrix formula to the position to rotate the quad to the line angle
+	// pointDiff can hold large values so we must divide by u_lineLength instead of calling GLSL's normalize function:
+	// https://asawicki.info/news_1596_watch_out_for_reduced_precision_normalizelength_in_opengl_es
+	vec2 normalized = pointDiff / max(a_lineThicknessAndLength.y, epsilon);
+	position = mat2(normalized.x, normalized.y, -normalized.y, normalized.x) * position;
+
+	// 3. Translate quad
+	position += a_penPoints.xy;
+
+	// 4. Apply view transform
+	position *= 2.0 / u_stageSize;
+	gl_Position = vec4(position, 0, 1);
+
+	v_lineColor = a_lineColor;
+	v_lineThickness = a_lineThicknessAndLength.x;
+	v_lineLength = a_lineThicknessAndLength.y;
+	v_penPoints = a_penPoints;
+	#elif defined(DRAW_MODE_background)
+	gl_Position = vec4(a_position * 2.0, 0, 1);
+	#else
+	gl_Position = u_projectionMatrix * u_modelMatrix * vec4(a_position, 0, 1);
+	vUv = a_texCoord;
+	#endif
 }
     `
 
-var fragmentShaderSource = `
-  #version 300 es
-  #ifdef GL_ES
-  precision mediump float;
-  #endif
+const fragmentShaderSource = `
+#version 300 es
+#ifdef GL_ES
+precision mediump float;
+#endif
 
-  in vec2 vUv;
-  out vec4 fragColor;
-  uniform sampler2D tDiffuse;
+in vec2 vUv;
+out vec4 fragColor;
+uniform sampler2D tDiffuse;
+uniform float time;
 
-  uniform vec4 u_color;
+uniform vec4 u_color;
 
-  void main() {
-    fragColor = texture(tDiffuse, vUv) * u_color;
-  }
+void main() {
+  fragColor = texture(tDiffuse, vUv) * u_color;
+  fragColor.rg *= sin(time);
+}
 `
 
 /*
@@ -136,8 +211,102 @@ class QuakeFragment {
 
     this.runtime = runtime
     this.shaderedSprites = []
-    this.animationFrameID;
 
+    this.gl = runtime.renderer._gl
+
+    //Thanks obviousalexc :3
+    //https://github.com/Pen-Group/extensions/blob/main/extensions/ShadedStamps/extension.js#L121
+    this.runtime.renderer._drawThese = (drawables, drawMode, projection, opts = {}) => {
+      const gl = runtime.renderer._gl;
+      let currentShader = null;
+  
+      const framebufferSpaceScaleDiffers = (
+          'framebufferWidth' in opts && 'framebufferHeight' in opts &&
+          opts.framebufferWidth !== runtime.renderer._nativeSize[0] && opts.framebufferHeight !== runtime.renderer._nativeSize[1]
+      );
+  
+      const numDrawables = drawables.length;
+      for (let drawableIndex = 0; drawableIndex < numDrawables; ++drawableIndex) {
+          const drawableID = drawables[drawableIndex];
+  
+          // If we have a filter, check whether the ID fails
+          if (opts.filter && !opts.filter(drawableID)) continue;
+  
+          const drawable = runtime.renderer._allDrawables[drawableID];
+          /** @todo check if drawable is inside the viewport before anything else */
+  
+          // Hidden drawables (e.g., by a "hide" block) are not drawn unless
+          // the ignoreVisibility flag is used (e.g. for stamping or touchingColor).
+          if (!drawable.getVisible() && !opts.ignoreVisibility) continue;
+  
+          // drawableScale is the "framebuffer-pixel-space" scale of the drawable, as percentages of the drawable's
+          // "native size" (so 100 = same as skin's "native size", 200 = twice "native size").
+          // If the framebuffer dimensions are the same as the stage's "native" size, there's no need to calculate it.
+          const drawableScale = framebufferSpaceScaleDiffers ? [
+              drawable.scale[0] * opts.framebufferWidth / runtime.renderer._nativeSize[0],
+              drawable.scale[1] * opts.framebufferHeight / runtime.renderer._nativeSize[1]
+          ] : drawable.scale;
+  
+          // If the skin or texture isn't ready yet, skip it.
+          if (!drawable.skin || !drawable.skin.getTexture(drawableScale)) continue;
+  
+          // Skip private skins, if requested.
+          if (opts.skipPrivateSkins && drawable.skin.private) continue;
+  
+          let uniforms = {};
+  
+          let effectBits = drawable.enabledEffects;
+          effectBits &= Object.prototype.hasOwnProperty.call(opts, 'effectMask') ? opts.effectMask : effectBits;
+  
+          const drawableShader = this.shaderedSprites[drawableID]
+          const newShader = drawableShader ? drawableShader.programInfo : runtime.renderer._shaderManager.getShader(drawMode, effectBits)
+  
+          // Manually perform region check. Do not create functions inside a
+          // loop.
+          // ! no
+          if (runtime.renderer._regionId !== newShader) {
+            runtime.renderer._doExitDrawRegion();
+            runtime.renderer._regionId = newShader;
+  
+              currentShader = newShader;
+              gl.useProgram(currentShader.program);
+              twgl.setBuffersAndAttributes(gl, currentShader, runtime.renderer._bufferInfo);
+              Object.assign(uniforms, {
+                  u_projectionMatrix: projection
+              });
+          }
+  
+          Object.assign(uniforms,
+              drawable.skin.getUniforms(drawableScale),
+              drawable.getUniforms());
+  
+          // Apply extra uniforms after the Drawable's, to allow overwriting.
+          if (opts.extraUniforms) {
+              Object.assign(uniforms, opts.extraUniforms);
+          }
+
+          if (drawableShader) {
+            drawableShader.uniforms.tDiffuse = uniforms.u_skin
+            drawableShader.uniforms.time = this.runtime.ioDevices.clock.projectTimer()
+            Object.assign(uniforms, drawableShader.uniforms)
+          }
+  
+          if (uniforms.u_skin) {
+            twgl.setTextureParameters(
+                gl, uniforms.u_skin, {
+                    minMag: drawable.skin.useNearest(drawableScale, drawable) ? gl.NEAREST : gl.LINEAR
+                }
+            );
+          }
+  
+          twgl.setUniforms(currentShader, uniforms);
+          twgl.drawBufferInfo(gl, runtime.renderer._bufferInfo, gl.TRIANGLES);
+      }
+  
+      runtime.renderer._regionId = null;
+    };
+
+    /*
     runtime.on('PROJECT_START', () => {
       this.animationFrameID = requestAnimationFrame(render)
     });
@@ -145,27 +314,7 @@ class QuakeFragment {
     runtime.on('PROJECT_STOP_ALL', () => {
       cancelAnimationFrame(this.animationFrameID)
     });
-
-    const render = (time) => {
-      for (let i in this.shaderedSprites) {
-        const shaderedObject = this.shaderedSprites[i]
-        const gl = shaderedObject.gl
-
-        const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, shaderedObject.fragmentShader])
-  
-        gl.useProgram(programInfo.program)
-        twgl.setBuffersAndAttributes(gl, programInfo, shaderedObject.positionBuffer)
-
-        shaderedObject.uniforms.time = time / 100
-
-        twgl.setUniforms(programInfo, shaderedObject.uniforms)
-        twgl.drawBufferInfo(gl, shaderedObject.positionBuffer)
-
-        shaderedObject.skin.setContent(shaderedObject.canvas)
-      }
-      this.runtime.requestRedraw()
-      this.animationFrameID = requestAnimationFrame(render)
-    }
+    */
 
     this.initFormatMessage({
       extensionName: ["地震碎片", "Quake Fragmment"],
@@ -229,97 +378,26 @@ class QuakeFragment {
 
   applyShader({ SHADER, SPRITE }, util) {
     const target = this.__getTargetByIdOrName(SPRITE, util)
-    const currentCostume = target.getCurrentCostume()
 
-    this.__check_shaderedSprites(target, currentCostume)
-    const shaderedObject = this.shaderedSprites[target.id]
-    const gl = shaderedObject.gl
-    const canvas = shaderedObject.canvas
-    const skin = shaderedObject.skin
-    const positionBuffer = shaderedObject.positionBuffer
+    if (!this.shaderedSprites[target.drawableID]) {
+      this.shaderedSprites[target.drawableID] = {}
+    }
+
+    const shaderedObject = this.shaderedSprites[target.drawableID]
 
     const asset = this.runtime.getGandiAssetContent(SHADER);
     if (asset) {
       shaderedObject.fragmentShader = asset.decodeText();
     }
 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
-    gl.viewport(0, 0, canvas.width, canvas.height)
-
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
-    const textureOptions = {
-      //mag: gl.NEAREST,
-      //min: gl.LINEAR,
-      src: this.__getCanvasFromSkin(shaderedObject.oldSkin),
-      //wrap: gl.CLAMP_TO_EDGE
-    }
-    shaderedObject.texture = twgl.createTexture(gl, textureOptions)
-
     shaderedObject.uniforms = {
-      time: 0,
       u_color: [Math.random(), Math.random(), Math.random(), 1],
-      tDiffuse: shaderedObject.texture
     }
 
-    const programInfo = twgl.createProgramInfo(gl, [vertexShaderSource, shaderedObject.fragmentShader])
-  
-    gl.useProgram(programInfo.program)
-    twgl.setBuffersAndAttributes(gl, programInfo, positionBuffer)
-
-    twgl.setUniforms(programInfo, shaderedObject.uniforms)
-    twgl.drawBufferInfo(gl, positionBuffer)
-
-    skin.setContent(canvas)
-    this.runtime.requestRedraw()
-  }
-
-  __check_shaderedSprites(target, currentCostume) {
-
-    if (this.shaderedSprites[target.id]) return;
-
-    const canvas = document.createElement("canvas")
-    const gl = canvas.getContext("webgl2")
-    if (!gl) {
-      console.error(target.name, ": WebGL2 not supported!")
-    }
-
-    const positionBuffer = twgl.createBufferInfoFromArrays(gl, {
-      position: {
-          numComponents: 2,
-          data: [
-            -1, -1,
-            1, -1,
-            -1, 1,
-            -1, 1,
-            1, -1,
-            1, 1,
-          ]
-      },
-    })
-
-    let skinId = this.runtime.renderer._nextSkinId++
-    let SkinsClass = new Skins(this.runtime)
-    let skin = new SkinsClass.SimpleSkin(
-      skinId,
-      this.runtime.renderer,
-    )
-    this.runtime.renderer._allSkins[skinId] = skin;
-    const oldSkin = this.runtime.renderer._allDrawables[target.drawableID].skin
-    this.runtime.renderer.updateDrawableSkinId(target.drawableID, skinId)
-    skin.size = currentCostume.size
-
-    console.log(target)
-
-    this.shaderedSprites[target.id] = {
-      "drawableID": target.drawableID,
-      "skinId": skinId,
-      "skin": skin,
-      "oldSkin": oldSkin,
-      "canvas": canvas,
-      "gl": gl,
-      "positionBuffer": positionBuffer
-    }
+    const programInfo = twgl.createProgramInfo(this.gl, [vertexShaderSource, fragmentShaderSource])
+    this.gl.useProgram(programInfo.program)
+    twgl.setBuffersAndAttributes(this.gl, programInfo.program, this.runtime.renderer._bufferInfo);
+    shaderedObject.programInfo = programInfo
   }
 
   __getTargetByIdOrName(name, util) {
