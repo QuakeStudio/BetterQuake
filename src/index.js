@@ -146,6 +146,7 @@ class QuakeFragment {
     this.shaderedSprites = []
 
     this.gl = runtime.renderer._gl
+    this.autoReRender = true
 
     //Thanks obviousalexc :3
     //https://github.com/Pen-Group/extensions/blob/main/extensions/ShadedStamps/extension.js#L121
@@ -239,6 +240,14 @@ class QuakeFragment {
       runtime.renderer._regionId = null;
     };
 
+    this.runtime.renderer.ext_quakefragment = this
+    patch(this.runtime.renderer, {
+      draw(og) {
+        og()
+        this.dirty = this.ext_quakefragment.autoReRender
+      },
+    })
+
     /*
     runtime.on('PROJECT_START', () => {
       this.animationFrameID = requestAnimationFrame(render)
@@ -295,6 +304,17 @@ class QuakeFragment {
             },
           },
         },
+        {
+          opcode: "setAutoReRender",
+          blockType: Scratch.BlockType.COMMAND,
+          text: "[SHOULD] auto re-render",
+          arguments: {
+            SHOULD: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "SHOULD_MENU"
+            },
+          },
+        },
       ],
       menus: {
         SPRITE_MENU_WITH_MYSELF: {
@@ -304,6 +324,18 @@ class QuakeFragment {
         SHADER_MENU: {
           acceptReporters: true,
           items: "__shaderList",
+        },
+        SHOULD_MENU: {
+          items: [
+            {
+              text: 'Enable',
+              value: "true"
+            },
+            {
+              text: 'Disable',
+              value: "false"
+            },
+        ]
         }
       },
     }
@@ -331,6 +363,12 @@ class QuakeFragment {
     this.gl.useProgram(programInfo.program)
     twgl.setBuffersAndAttributes(this.gl, programInfo.program, this.runtime.renderer._bufferInfo);
     shaderedObject.programInfo = programInfo
+
+    this.runtime.renderer.dirty = true
+  }
+
+  setAutoReRender({ SHOULD }) {
+    this.autoReRender = SHOULD == "true" ? true : false
   }
 
   __getTargetByIdOrName(name, util) {
