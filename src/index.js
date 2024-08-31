@@ -1,4 +1,5 @@
 import * as twgl from 'twgl.js'
+const l10n = require('src/l10n.json')
 
 const icon = "data:image/svg+xml,%3Csvg%20width%3D%22129%22%20height%3D%22129%22%20viewBox%3D%220%200%20129%20129%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M75%2067.1928H80V80.1928H75V67.1928Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M55.0731%2021.02L70.7722%2030.8701L60.6256%20108.129L43.464%20109.415L55.0731%2021.02Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M106.059%2046.3074L92.7209%2055.4334L53.5113%2034.7133L54.8128%2021.0354L106.059%2046.3074Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M102.549%2072.9834L89.2109%2079.3015L50.3659%2061.3893L51.6674%2047.7114L102.549%2072.9834Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3Cpath%20d%3D%22M55.0731%2014L70.7722%2023.8501L60.6256%20101.109L43.464%20102.395L55.0731%2014Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M106.059%2039.2874L92.7209%2048.4134L53.5113%2027.6933L54.8128%2014.0154L106.059%2039.2874Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M102.549%2065.9634L89.2109%2072.2814L50.3659%2054.3693L51.6674%2040.6914L102.549%2065.9634Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M55.0731%2018.212L70.7722%2028.0621L60.6256%20105.321L43.464%20106.607L55.0731%2018.212Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M106.059%2043.4994L92.7209%2052.6254L53.5113%2031.9053L54.8128%2018.2274L106.059%2043.4994Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M102.549%2070.1754L89.2109%2076.4935L50.3659%2058.5813L51.6674%2044.9034L102.549%2070.1754Z%22%20fill%3D%22white%22%2F%3E%3Cpath%20d%3D%22M92%2070.1928H97V97.1928H92V70.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M69%2014.1928H72V29.1928H69V14.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M21%2018.1928H29V52.1928H21V18.1928Z%22%20fill%3D%22%23F1DF9E%22%2F%3E%3Cpath%20d%3D%22M37%2097.1928H47V115.193H37V97.1928Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M90%2018.1928H100V39.1928H90V18.1928Z%22%20fill%3D%22%23F19ED2%22%2F%3E%3Cpath%20d%3D%22M42%2039.1928H53V64.1928H42V39.1928Z%22%20fill%3D%22%239EE7F1%22%2F%3E%3C%2Fsvg%3E"
 const extensionId = "quakeFrag"
@@ -250,38 +251,28 @@ class QuakeFragment {
       },
     })
 
-    /*
-    runtime.on('PROJECT_START', () => {
-      this.animationFrameID = requestAnimationFrame(render)
-    });
-
-    runtime.on('PROJECT_STOP_ALL', () => {
-      cancelAnimationFrame(this.animationFrameID)
-    });
-    */
-
-    this.initFormatMessage({
-      extensionName: ["地震碎片", "QuakeFragmment"],
-      me: ["我", "me"],
-      stage: ["阶段", "stage"],
-      default: ["默认", "Default"]
-    })
-  }
-  initFormatMessage(l10n) {
-    const res = { "zh-cn": {}, en: {} }
-    Object.entries(l10n).forEach(([id, msgs]) => {
-      const ID = `${extensionId}.${id}`;
-      [res["zh-cn"][ID], res.en[ID]] = msgs
-    })
-    const _formatMessage = this.runtime.getFormatMessage(res)
-    this.fm = (id) => {
-      const ID = `${extensionId}.${id}`
-      return _formatMessage({
-        ID,
-        default: ID,
-        description: ID,
-      })
+    const newL10n = {};
+    for (const lang in l10n) {
+      if (l10n.hasOwnProperty(lang)) {
+        newL10n[lang] = {};
+        for (const key in l10n[lang]) {
+          if (l10n[lang].hasOwnProperty(key)) {
+            newL10n[lang][`${extensionId}.${key}`] = l10n[lang][key];
+          }
+        }
+      }
     }
+
+    console.log(newL10n)
+
+    this._formatMessage = runtime.getFormatMessage(newL10n)
+  }
+  fm(id) {
+    return this._formatMessage({
+      id: `${extensionId}.${id}`,
+      default: id,
+      description: id,
+    })
   }
   getInfo() {
     return {
@@ -297,7 +288,7 @@ class QuakeFragment {
         {
           opcode: "setAutoReRender",
           blockType: Scratch.BlockType.COMMAND,
-          text: "[SHOULD] auto re-render",
+          text: this.fm("[SHOULD] auto re-render"),
           arguments: {
             SHOULD: {
               type: Scratch.ArgumentType.STRING,
@@ -308,7 +299,7 @@ class QuakeFragment {
         {
           opcode: "removeShader",
           blockType: Scratch.BlockType.COMMAND,
-          text: "Remove [SHADER]",
+          text: this.fm("Remove [SHADER]"),
           arguments: {
             SHADER: {
               type: Scratch.ArgumentType.STRING,
@@ -320,7 +311,7 @@ class QuakeFragment {
         {
           opcode: "applyShader",
           blockType: Scratch.BlockType.COMMAND,
-          text: "Apply [SHADER] to [TARGET]",
+          text: this.fm("Apply [SHADER] to [TARGET]"),
           arguments: {
             SHADER: {
               type: Scratch.ArgumentType.STRING,
@@ -335,7 +326,7 @@ class QuakeFragment {
         {
           opcode: "detachShader",
           blockType: Scratch.BlockType.COMMAND,
-          text: "Detach [SHADER] from [TARGET]",
+          text: this.fm("Detach [SHADER] from [TARGET]"),
           arguments: {
             SHADER: {
               type: Scratch.ArgumentType.STRING,
@@ -360,11 +351,11 @@ class QuakeFragment {
         SHOULD_MENU: {
           items: [
             {
-              text: 'Enable',
+              text: this.fm('Enable'),
               value: "true"
             },
             {
-              text: 'Disable',
+              text: this.fm('Disable'),
               value: "false"
             },
         ]
@@ -423,7 +414,7 @@ class QuakeFragment {
         drawableShader.source = asset.decodeText();
       }
 
-      const programInfo = twgl.createProgramInfo(this.gl, [vertexShaderSource, SHADER === "__default__" ? fragmentShaderSource : drawableShader.source])
+      const programInfo = twgl.createProgramInfo(this.gl, [vertexShaderSource, SHADER === "__example__" ? fragmentShaderSource : drawableShader.source])
       this.gl.useProgram(programInfo.program)
       twgl.setBuffersAndAttributes(this.gl, programInfo.program, this.runtime.renderer._bufferInfo);
       drawableShader.programInfo = programInfo
@@ -508,8 +499,8 @@ class QuakeFragment {
       .getGandiAssetsFileList("glsl")
       .map((item) => item.fullName);
     list.push({
-      text: this.fm("default"),
-      value: "__default__",
+      text: this.fm("example"),
+      value: "__example__",
     });
 
     return list;

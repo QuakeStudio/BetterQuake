@@ -1,0 +1,49 @@
+{
+  "en": {
+    "extensionName": "QuakeFragmment",
+
+    "me": "me",
+    "stage": "stage",
+    "example": "Example",
+
+    "Enable": "Enable",
+    "Disable": "Disable",
+
+    "[SHOULD] auto re-render": "[SHOULD] auto re-render",
+    "Remove [SHADER]": "Remove [SHADER]",
+    "Apply [SHADER] to [TARGET]": "Apply [SHADER] to [TARGET]",
+    "Detach [SHADER] from [TARGET]": "Detach [SHADER] from [TARGET]"
+  },
+
+  "zh-cn": {
+    "extensionName": "地震碎片",
+
+    "me": "我",
+    "stage": "阶段",
+    "example": "例子",
+
+    "Enable": "使能够",
+    "Disable": "禁用",
+
+    "[SHOULD] auto re-render": "[SHOULD]]自动重新渲染",
+    "Remove [SHADER]": "删除 [SHADER]",
+    "Apply [SHADER] to [TARGET]": "将 [SHADER] 应用于 [TARGET]",
+    "Detach [SHADER] from [TARGET]": "将 [SHADER] 从 [TARGET] 分离"
+  },
+
+  "ms": {
+    "extensionName": "QuakeFragmment",
+
+    "me": "saya",
+    "stage": "pentas",
+    "example": "Contoh",
+
+    "Enable": "Hidupkan",
+    "Disable": "Matikan",
+
+    "[SHOULD] auto re-render": "[SHOULD] lukis semula sendiri",
+    "Remove [SHADER]": "Buang [SHADER]",
+    "Apply [SHADER] to [TARGET]": "Letakkan [SHADER] ke [TARGET]",
+    "Detach [SHADER] from [TARGET]": "Cabut [SHADER] dari [TARGET]"
+  }
+}
