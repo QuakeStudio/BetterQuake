@@ -378,16 +378,36 @@ class QuakeFragment {
   }
 
   removeShader({ SHADER }) {
-    delete this.QuakeManager.loadedShaders[SHADER]
-
+    const shaderInfo = this.QuakeManager.loadedShaders[SHADER];
+    if (!shaderInfo) {
+      console.error(`Shader ${SHADER} not found.`);
+      return;
+    }
+  
+    const shaderProgram = shaderInfo.programInfo.program;
+    const gl = this.gl
+  
+    // Retrieve attached shaders
+    const shaders = gl.getAttachedShaders(shaderProgram);
+    shaders.forEach(shader => {
+      gl.detachShader(shaderProgram, shader);
+      gl.deleteShader(shader);
+    });
+  
+    // Delete the program
+    gl.deleteProgram(shaderProgram);
+  
+    // Remove the shader from the loaded shaders
+    delete this.QuakeManager.loadedShaders[SHADER];
+  
+    // Clean up any references to the shader in drawables
     for (let i = 0; i < this.runtime.renderer._allDrawables.length; i++) {
       const drawable = this.runtime.renderer._allDrawables[i];
-      
       if (drawable.QuakeFragment?.shader === SHADER) {
-        delete drawable.QuakeFragment
+        delete drawable.QuakeFragment;
       }
     }
-  }
+  }  
 
   applyShader({ SHADER, TARGET }, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
