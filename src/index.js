@@ -307,6 +307,17 @@ class QuakeFragment {
             },
           },
         },
+        {
+          opcode: "reloadShader",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Reload [SHADER]"),
+          arguments: {
+            SHADER: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "SHADER_MENU"
+            },
+          },
+        },
         "---",
         {
           opcode: "applyShader",
@@ -398,7 +409,47 @@ class QuakeFragment {
         delete drawable.QuakeFragment;
       }
     }
-  }  
+  }
+
+  reloadShader({ SHADER }) {
+    let drawableShader = this.QuakeManager.loadedShaders[SHADER]
+
+    const shaderUsers = []
+    for (let i = 0; i < this.runtime.renderer._allDrawables.length; i++) {
+      const drawable = this.runtime.renderer._allDrawables[i];
+      if (drawable.QuakeFragment?.shader === SHADER) {
+        shaderUsers.push(drawable)
+      }
+    }
+
+    if (drawableShader) {
+      this.removeShader({ SHADER })
+    } else {
+      drawableShader = {}
+    }
+
+    const asset = this.runtime.getGandiAssetContent(SHADER);
+    if (asset) {
+      drawableShader.source = asset.decodeText();
+    }
+
+    const programInfo = twgl.createProgramInfo(this.gl, [vertexShaderSource, SHADER === "__example__" ? fragmentShaderSource : drawableShader.source])
+    this.gl.useProgram(programInfo.program)
+    twgl.setBuffersAndAttributes(this.gl, programInfo.program, this.runtime.renderer._bufferInfo);
+    drawableShader.programInfo = programInfo
+
+    this.QuakeManager.loadedShaders[SHADER] = drawableShader
+
+    shaderUsers.forEach(drawable => {
+      drawable.QuakeFragment = {}
+      drawable.QuakeFragment.shader = SHADER
+      drawable.QuakeFragment.uniforms = {
+        u_color: [Math.random(), Math.random(), Math.random(), 1],
+      }
+    });
+
+    this.runtime.renderer.dirty = true
+  }
 
   applyShader({ SHADER, TARGET }, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
@@ -407,19 +458,8 @@ class QuakeFragment {
     let drawableShader = this.QuakeManager.loadedShaders[SHADER]
 
     if (!drawableShader) {
-      drawableShader = {}
-
-      const asset = this.runtime.getGandiAssetContent(SHADER);
-      if (asset) {
-        drawableShader.source = asset.decodeText();
-      }
-
-      const programInfo = twgl.createProgramInfo(this.gl, [vertexShaderSource, SHADER === "__example__" ? fragmentShaderSource : drawableShader.source])
-      this.gl.useProgram(programInfo.program)
-      twgl.setBuffersAndAttributes(this.gl, programInfo.program, this.runtime.renderer._bufferInfo);
-      drawableShader.programInfo = programInfo
-
-      this.QuakeManager.loadedShaders[SHADER] = drawableShader
+      this.reloadShader({ SHADER })
+      drawableShader = this.QuakeManager.loadedShaders[SHADER]
     }
 
     if (!drawable.QuakeFragment) {

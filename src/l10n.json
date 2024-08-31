@@ -11,6 +11,7 @@
 
     "[SHOULD] auto re-render": "[SHOULD] auto re-render",
     "Remove [SHADER]": "Remove [SHADER]",
+    "Reload [SHADER]": "Reload [SHADER]",
     "Apply [SHADER] to [TARGET]": "Apply [SHADER] to [TARGET]",
     "Detach [SHADER] from [TARGET]": "Detach [SHADER] from [TARGET]"
   },
@@ -27,6 +28,7 @@
 
     "[SHOULD] auto re-render": "[SHOULD]]自动重新渲染",
     "Remove [SHADER]": "删除 [SHADER]",
+    "Reload [SHADER]": "重新加载 [SHADER]",
     "Apply [SHADER] to [TARGET]": "将 [SHADER] 应用于 [TARGET]",
     "Detach [SHADER] from [TARGET]": "将 [SHADER] 从 [TARGET] 分离"
   },
@@ -43,7 +45,8 @@
 
     "[SHOULD] auto re-render": "[SHOULD] lukis semula sendiri",
     "Remove [SHADER]": "Buang [SHADER]",
-    "Apply [SHADER] to [TARGET]": "Letakkan [SHADER] ke [TARGET]",
+    "Reload [SHADER]": "Set semula [SHADER]",
+    "Apply [SHADER] to [TARGET]": "Sambungkan [SHADER] ke [TARGET]",
     "Detach [SHADER] from [TARGET]": "Cabut [SHADER] dari [TARGET]"
   }
 }
