@@ -143,7 +143,10 @@ class QuakeFragment {
     window.TEST = this
 
     this.runtime = runtime
-    this.shaderedSprites = []
+    if (!this.runtime.QuakeManager) this.runtime.QuakeManager = {}
+
+    this.runtime.QuakeManager.loadedShaders = []
+    this.QuakeManager = this.runtime.QuakeManager
 
     this.gl = runtime.renderer._gl
     this.autoReRender = true
@@ -192,7 +195,7 @@ class QuakeFragment {
           let effectBits = drawable.enabledEffects;
           effectBits &= Object.prototype.hasOwnProperty.call(opts, 'effectMask') ? opts.effectMask : effectBits;
   
-          const drawableShader = this.shaderedSprites[drawableID]
+          const drawableShader = runtime.QuakeManager.loadedShaders[drawable.QuakeFragment?.shader]
           const newShader = drawableShader ? drawableShader.programInfo : runtime.renderer._shaderManager.getShader(drawMode, effectBits)
   
           // Manually perform region check. Do not create functions inside a
@@ -220,14 +223,13 @@ class QuakeFragment {
           }
 
           if (drawableShader) {
-            drawableShader.uniforms.tDiffuse = uniforms.u_skin
-            drawableShader.uniforms.time = this.runtime.ioDevices.clock.projectTimer()
-            Object.assign(uniforms, drawableShader.uniforms)
+            drawable.QuakeFragment.uniforms.time = this.runtime.ioDevices.clock.projectTimer()
+            Object.assign(uniforms, drawable.QuakeFragment.uniforms)
           }
   
-          if (uniforms.u_skin) {
+          if (uniforms.u_skin || drawable.QuakeFragment.uniforms.tDiffuse) {
             twgl.setTextureParameters(
-                gl, uniforms.u_skin, {
+                gl, uniforms.u_skin ? uniforms.u_skin : drawable.QuakeFragment.uniforms.tDiffuse, {
                     minMag: drawable.skin.useNearest(drawableScale, drawable) ? gl.NEAREST : gl.LINEAR
                 }
             );
@@ -259,8 +261,10 @@ class QuakeFragment {
     */
 
     this.initFormatMessage({
-      extensionName: ["地震碎片", "Quake Fragmment"],
+      extensionName: ["地震碎片", "QuakeFragmment"],
       me: ["我", "me"],
+      stage: ["阶段", "stage"],
+      default: ["默认", "Default"]
     })
   }
   initFormatMessage(l10n) {
@@ -289,21 +293,7 @@ class QuakeFragment {
       blockIconURI: icon,
       menuIconURI: icon,
       blocks: [
-        {
-          opcode: "applyShader",
-          blockType: Scratch.BlockType.COMMAND,
-          text: "Apply [SHADER] to [SPRITE]",
-          arguments: {
-            SHADER: {
-              type: Scratch.ArgumentType.STRING,
-              menu: "SHADER_MENU"
-            },
-            SPRITE: {
-              type: Scratch.ArgumentType.STRING,
-              menu: "SPRITE_MENU_WITH_MYSELF",
-            },
-          },
-        },
+        "---",
         {
           opcode: "setAutoReRender",
           blockType: Scratch.BlockType.COMMAND,
@@ -315,15 +305,57 @@ class QuakeFragment {
             },
           },
         },
+        {
+          opcode: "removeShader",
+          blockType: Scratch.BlockType.COMMAND,
+          text: "Remove [SHADER]",
+          arguments: {
+            SHADER: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "SHADER_MENU"
+            },
+          },
+        },
+        "---",
+        {
+          opcode: "applyShader",
+          blockType: Scratch.BlockType.COMMAND,
+          text: "Apply [SHADER] to [TARGET]",
+          arguments: {
+            SHADER: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "SHADER_MENU"
+            },
+            TARGET: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "DRAWABLES_MENU",
+            },
+          },
+        },
+        {
+          opcode: "detachShader",
+          blockType: Scratch.BlockType.COMMAND,
+          text: "Detach [SHADER] from [TARGET]",
+          arguments: {
+            SHADER: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "SHADER_MENU"
+            },
+            TARGET: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "DRAWABLES_MENU",
+            },
+          },
+        },
       ],
       menus: {
-        SPRITE_MENU_WITH_MYSELF: {
+        DRAWABLES_MENU: {
           acceptReporters: true,
-          items: "__spriteMenuWithMyself",
+          items: "_getDrawablesMenu",
         },
         SHADER_MENU: {
           acceptReporters: true,
-          items: "__shaderList",
+          items: "_shaderList",
         },
         SHOULD_MENU: {
           items: [
@@ -341,38 +373,67 @@ class QuakeFragment {
     }
   }
 
-  applyShader({ SHADER, SPRITE }, util) {
-    const target = this.__getTargetByIdOrName(SPRITE, util)
-
-    if (!this.shaderedSprites[target.drawableID]) {
-      this.shaderedSprites[target.drawableID] = {}
-    }
-
-    const shaderedObject = this.shaderedSprites[target.drawableID]
-
-    const asset = this.runtime.getGandiAssetContent(SHADER);
-    if (asset) {
-      shaderedObject.fragmentShader = asset.decodeText();
-    }
-
-    shaderedObject.uniforms = {
-      u_color: [Math.random(), Math.random(), Math.random(), 1],
-    }
-
-    const programInfo = twgl.createProgramInfo(this.gl, [vertexShaderSource, fragmentShaderSource])
-    this.gl.useProgram(programInfo.program)
-    twgl.setBuffersAndAttributes(this.gl, programInfo.program, this.runtime.renderer._bufferInfo);
-    shaderedObject.programInfo = programInfo
-
-    this.runtime.renderer.dirty = true
-  }
-
   setAutoReRender({ SHOULD }) {
     this.autoReRender = SHOULD == "true" ? true : false
   }
 
-  __getTargetByIdOrName(name, util) {
+  removeShader({ SHADER }) {
+    delete this.QuakeManager.loadedShaders[SHADER]
+
+    for (let i = 0; i < this.runtime.renderer._allDrawables.length; i++) {
+      const drawable = this.runtime.renderer._allDrawables[i];
+      
+      if (drawable.QuakeFragment?.shader === SHADER) {
+        delete drawable.QuakeFragment
+      }
+    }
+  }
+
+  applyShader({ SHADER, TARGET }, util) {
+    const target = this._getTargetByIdOrName(TARGET, util)
+    const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+
+    let drawableShader = this.QuakeManager.loadedShaders[SHADER]
+
+    if (!drawableShader) {
+      drawableShader = {}
+
+      const asset = this.runtime.getGandiAssetContent(SHADER);
+      if (asset) {
+        drawableShader.source = asset.decodeText();
+      }
+
+      const programInfo = twgl.createProgramInfo(this.gl, [vertexShaderSource, SHADER === "__default__" ? fragmentShaderSource : drawableShader.source])
+      this.gl.useProgram(programInfo.program)
+      twgl.setBuffersAndAttributes(this.gl, programInfo.program, this.runtime.renderer._bufferInfo);
+      drawableShader.programInfo = programInfo
+
+      this.QuakeManager.loadedShaders[SHADER] = drawableShader
+    }
+
+    if (!drawable.QuakeFragment) {
+      drawable.QuakeFragment = {}
+    }
+
+    drawable.QuakeFragment.shader = SHADER
+    drawable.QuakeFragment.uniforms = {
+      u_color: [Math.random(), Math.random(), Math.random(), 1],
+    }
+
+    this.runtime.renderer.dirty = true
+  }
+
+  detachShader({ SHADER, TARGET }, util) {
+    const target = this._getTargetByIdOrName(TARGET, util)
+    const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+    if (drawable.QuakeFragment?.shader === SHADER) {
+      delete drawable.QuakeFragment
+    }
+  }
+
+  _getTargetByIdOrName(name, util) {
     if (name === '__myself__') return util.target
+    if (name === '__stage__') return this.runtime.getTargetForStage()
     let target = this.runtime.getSpriteTargetByName(name)
     if (!target) {
       target = this.runtime.getTargetById(name)
@@ -381,7 +442,7 @@ class QuakeFragment {
     return target
   }
 
-  __getSpriteMenu() {
+  _getSpriteMenu() {
     const { targets } = this.runtime
     // 跳过舞台
     const menu = targets
@@ -400,32 +461,36 @@ class QuakeFragment {
     return menu
   }
 
-  __spriteMenuWithMyself() {
-    const menu = this.__getSpriteMenu()
+  _getDrawablesMenu() {
+    const menu = this._getSpriteMenu()
     if (!this.runtime._editingTarget) return menu
-    // 当前角色名称
+
     const editingTargetName = this.runtime._editingTarget.sprite.name
-    // 从列表删除自己
+
     const index = menu.findIndex((item) => item.value === editingTargetName)
     if (index !== -1) {
       menu.splice(index, 1)
     }
-    // 列表第一项插入“自己”
-    if (this.runtime._editingTarget.isStage) return menu
+
     menu.unshift({
       text: this.fm("me"),
       value: "__myself__",
+    },
+    {
+      text: this.fm("stage"),
+      value: "__stage__",
     })
     return menu
   }
 
-  __shaderList() {
+  _shaderList() {
     const list = this.runtime
       .getGandiAssetsFileList("glsl")
       .map((item) => item.fullName);
-    if (list.length < 1) {
-      list.push("没有文件 empty");
-    }
+    list.push({
+      text: this.fm("default"),
+      value: "__default__",
+    });
 
     return list;
   }
