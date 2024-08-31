@@ -7,7 +7,7 @@
 </div>
 
 QuakeFragment is an extension made for [Gandi IDE](https://getgandi.com/) to allow the use of Fragment shaders.
-This extension is built with an [an extension scaffholding](https://github.com/FurryR/scratch-ext) made by FurryR.
+This extension is built with an [extension scaffholding](https://github.com/FurryR/scratch-ext) by FurryR. Huge thanks to him :3
 
 ## How to contribute
 
@@ -40,7 +40,7 @@ Fork this repository and modify `src/l10n.json`. DO NOT edit the code.
 
 <div align="center">
 
-_`This project is licensed under the MIT license.`_
+_`This project is licensed under the MPL-2.0 license.`_
 
 [NOTICE](./NOTICE.md)
 
