@@ -42,8 +42,6 @@ Fork this repository and modify `src/l10n.json`. DO NOT edit the code.
 
 _`This project is licensed under the MPL-2.0 license.`_
 
-[NOTICE](./NOTICE.md)
-
 ❤️
 
 </div>
