@@ -1,7 +1,7 @@
 {
-  "name": "quake-fragment",
+  "name": "better-quake",
   "version": "1.0.0",
-  "description": "A better way to load fragment shaders for Gandi IDE.",
+  "description": "Better shader loader.",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
