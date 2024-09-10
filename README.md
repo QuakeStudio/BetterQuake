@@ -1,6 +1,6 @@
 <div align="center">
 
-![QuakeFragment logo](./src/assets/Quake%20Fragment.png "QuakeFragment Logo") 
+![QuakeFragment logo](./src/assets/BetterQuake.png "BetterQuake Logo") 
 
 # Quake Fragment
 
