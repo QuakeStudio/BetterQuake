@@ -9,6 +9,13 @@
 BetterQuake is an extension made for [Gandi IDE](https://getgandi.com/) to fully allow the use of custom shaders.
 This extension is built with an [extension scaffholding](https://github.com/FurryR/scratch-ext) by FurryR. Huge thanks to him :3
 
+## Current Issues with the extension
+
+1. Incompatible with `Gandi Quake`.
+2. Incompatible with `Clipping & Blending`.
+
+A way to make `Clipping & Blending` compatible is already figured out and will be implemented in the future. `Gandi Quake` however we have no idea.
+
 ## How to contribute
 
 ### Suggestions and Bug Reports
