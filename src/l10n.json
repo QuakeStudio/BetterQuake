@@ -10,10 +10,25 @@
     "Disable": "Disable",
 
     "[SHOULD] auto re-render": "[SHOULD] auto re-render",
+    "All loaded shaders": "All loaded shaders",
     "Remove [SHADER]": "Remove [SHADER]",
     "Reload [SHADER]": "Reload [SHADER]",
     "Apply [SHADER] to [TARGET]": "Apply [SHADER] to [TARGET]",
-    "Detach [SHADER] from [TARGET]": "Detach [SHADER] from [TARGET]"
+    "Detach [SHADER] from [TARGET]": "Detach [SHADER] from [TARGET]",
+
+    "Uniforms": "Uniforms",
+    "Set number [UNIFORM] of [TARGET] to [VALUE]": "Set number [UNIFORM] of [TARGET] to [VALUE]",
+    "Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]": "Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]",
+    "Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]": "Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]",
+    "Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]": "Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]",
+    "Set matrix [UNIFORM] of [TARGET] to [MATRIX]": "Set matrix [UNIFORM] of [TARGET] to [MATRIX]",
+    "Set texture [UNIFORM] of [TARGET] to [TEXTURE]": "Set texture [UNIFORM] of [TARGET] to [TEXTURE]",
+
+    "Textures": "Textures",
+    "All textures": "All textures",
+    "Delete all textures": "Delete all textures",
+    "Delete texture called [NAME]": "Delete texture called [NAME]",
+    "Create/Update texture called [NAME] with [TEXTURE]": "Create/Update texture called [NAME] with [TEXTURE]"
   },
 
   "zh-cn": {
@@ -27,10 +42,25 @@
     "Disable": "禁用",
 
     "[SHOULD] auto re-render": "[SHOULD]]自动重新渲染",
+    "All loaded shaders": "所有加载的着色器",
     "Remove [SHADER]": "删除 [SHADER]",
     "Reload [SHADER]": "重新加载 [SHADER]",
     "Apply [SHADER] to [TARGET]": "将 [SHADER] 应用于 [TARGET]",
-    "Detach [SHADER] from [TARGET]": "将 [SHADER] 从 [TARGET] 分离"
+    "Detach [SHADER] from [TARGET]": "将 [SHADER] 从 [TARGET] 分离",
+
+    "Uniforms": "制服",
+    "Set number [UNIFORM] of [TARGET] to [VALUE]": "将 [TARGET] 的编号 [UNIFORM] 设置为 [VALUE]",
+    "Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]": "将 [TARGET] 的向量 2 [UNIFORM] 设置为 [VALUE1][VALUE2]",
+    "Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]": "将 [TARGET] 的向量 3 [UNIFORM] 设置为 [VALUE1][VALUE2][VALUE3]",
+    "Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]": "将 [TARGET] 的向量 4 [UNIFORM] 设置为 [VALUE1][VALUE2][VALUE3][VALUE4]",
+    "Set matrix [UNIFORM] of [TARGET] to [MATRIX]": "将 [TARGET] 的矩阵 [UNIFORM] 设置为 [MATRIX]",
+    "Set texture [UNIFORM] of [TARGET] to [TEXTURE]": "将 [TARGET] 的纹理 [UNIFORM] 设置为 [TEXTURE]",
+
+    "Textures": "纹理",
+    "All textures": "所有纹理",
+    "Delete all textures": "删除所有纹理",
+    "Delete texture called [NAME]": "删除名为 [NAME] 的纹理",
+    "Create/Update texture called [NAME] with [TEXTURE]": "使用 [TEXTURE] 创建/更新名为 [NAME] 的纹理"
   },
 
   "ms": {
@@ -44,9 +74,24 @@
     "Disable": "Matikan",
 
     "[SHOULD] auto re-render": "[SHOULD] lukis semula sendiri",
+    "All loaded shaders": "Semua shader dimuatkan",
     "Remove [SHADER]": "Buang [SHADER]",
     "Reload [SHADER]": "Set semula [SHADER]",
     "Apply [SHADER] to [TARGET]": "Sambungkan [SHADER] ke [TARGET]",
-    "Detach [SHADER] from [TARGET]": "Cabut [SHADER] dari [TARGET]"
+    "Detach [SHADER] from [TARGET]": "Cabut [SHADER] dari [TARGET]",
+
+    "Uniforms": "Uniforms",
+    "Set number [UNIFORM] of [TARGET] to [VALUE]": "Tetapkan nombor [UNIFORM] daripada [TARGET] kepada [VALUE]",
+    "Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]": "Tetapkan vektor 2 [UNIFORM] daripada [TARGET] kepada [VALUE1][VALUE2]",
+    "Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]": "Tetapkan vektor 3 [UNIFORM] daripada [TARGET] kepada [VALUE1][VALUE2][VALUE3]",
+    "Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]": "Tetapkan vektor 4 [UNIFORM] daripada [TARGET] kepada [VALUE1][VALUE2][VALUE3][VALUE4]",
+    "Set matrix [UNIFORM] of [TARGET] to [MATRIX]": "Tetapkan matriks [UNIFORM] daripada [TARGET] kepada [MATRIX]",
+    "Set texture [UNIFORM] of [TARGET] to [TEXTURE]": "Tetapkan tekstur [UNIFORM] daripada [TARGET] kepada [TEXTURE]",
+
+    "Textures": "Tekstur",
+    "All textures": "Semua tekstur",
+    "Delete all textures": "Padam semua tekstur",
+    "Delete texture called [NAME]": "Padam tekstur dipanggil [NAME]",
+    "Create/Update texture called [NAME] with [TEXTURE]": "Cipta/Kemas kini tekstur dipanggil [NAME] dengan [TEKSTUR]"
   }
 }
