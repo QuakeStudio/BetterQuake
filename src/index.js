@@ -869,7 +869,7 @@ window.tempExt = {
     disabled: false,
     collaboratorList: [
       {
-        collaborator: 'Fath11@Cocrea',
+        collaborator: 'Fath11@QuakeStudio',
         collaboratorURL: 'https://cocrea.world/@Fath11',
       },
     ],
