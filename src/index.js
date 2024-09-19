@@ -166,6 +166,7 @@ class QuakeFragment {
     if (!this.runtime.QuakeManager) this.runtime.QuakeManager = {}
 
     this.runtime.QuakeManager.loadedShaders = []
+    this.runtime.QuakeManager.textures = []
     this.QuakeManager = this.runtime.QuakeManager
 
     this.gl = runtime.renderer._gl
@@ -292,8 +293,6 @@ class QuakeFragment {
       }
     }
 
-    console.log(newL10n)
-
     this._formatMessage = runtime.getFormatMessage(newL10n)
   }
   fm(id) {
@@ -324,6 +323,14 @@ class QuakeFragment {
               menu: "SHOULD_MENU"
             },
           },
+        },
+        "---",
+        {
+          opcode: "allLoadedShaders",
+          blockType: Scratch.BlockType.REPORTER,
+          text: this.fm("All loaded shaders"),
+          arguments: {},
+          disableMonitor: true,
         },
         {
           opcode: "removeShader",
@@ -376,6 +383,185 @@ class QuakeFragment {
               type: Scratch.ArgumentType.STRING,
               menu: "DRAWABLES_MENU",
             },
+          },
+        },
+        "---" + this.fm("Uniforms"),
+        {
+          opcode: "setNumber",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Set number [UNIFORM] of [TARGET] to [VALUE]"),
+          arguments: {
+            UNIFORM: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Uniform"
+            },
+            TARGET: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "DRAWABLES_MENU",
+            },
+            VALUE: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+          },
+        },
+        {
+          opcode: "setVec2",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]"),
+          arguments: {
+            UNIFORM: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Uniform"
+            },
+            TARGET: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "DRAWABLES_MENU",
+            },
+            VALUE1: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+            VALUE2: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+          },
+        },
+        {
+          opcode: "setVec3",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]"),
+          arguments: {
+            UNIFORM: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Uniform"
+            },
+            TARGET: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "DRAWABLES_MENU",
+            },
+            VALUE1: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+            VALUE2: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+            VALUE3: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+          },
+        },
+        {
+          opcode: "setVec4",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]"),
+          arguments: {
+            UNIFORM: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Uniform"
+            },
+            TARGET: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "DRAWABLES_MENU",
+            },
+            VALUE1: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+            VALUE2: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+            VALUE3: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+            VALUE4: {
+              type: Scratch.ArgumentType.NUMBER,
+              defaultValue: 0
+            },
+          },
+        },
+        {
+          opcode: "setMatrix",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Set matrix [UNIFORM] of [TARGET] to [MATRIX]"),
+          arguments: {
+            UNIFORM: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Uniform"
+            },
+            TARGET: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "DRAWABLES_MENU",
+            },
+            MATRIX: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "[[], []]"
+            }
+          },
+        },
+        {
+          opcode: "setTexture",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Set texture [UNIFORM] of [TARGET] to [TEXTURE]"),
+          arguments: {
+            UNIFORM: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Uniform"
+            },
+            TARGET: {
+              type: Scratch.ArgumentType.STRING,
+              menu: "DRAWABLES_MENU",
+            },
+            TEXTURE: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Scratch Cat"
+            },
+          },
+        },
+        "---" + this.fm("Textures"),
+        {
+          opcode: "allTextures",
+          blockType: Scratch.BlockType.REPORTER,
+          text: this.fm("All textures"),
+          arguments: {},
+          disableMonitor: true,
+        },
+        {
+          opcode: "deleteAllTextures",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Delete all textures"),
+          arguments: {},
+        },
+        {
+          opcode: "deleteTexture",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Delete texture called [NAME]"),
+          arguments: {
+            NAME: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Scratch Cat"
+            },
+          },
+        },
+        {
+          opcode: "createUpdateTexture",
+          blockType: Scratch.BlockType.COMMAND,
+          text: this.fm("Create/Update texture called [NAME] with [TEXTURE]"),
+          arguments: {
+            NAME: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "Scratch Cat"
+            },
+            TEXTURE: {
+              type: Scratch.ArgumentType.STRING,
+              defaultValue: "dc7f14b8438834de154cebaf827b6b4d.svg"
+            }
           },
         },
       ],
@@ -480,6 +666,10 @@ class QuakeFragment {
     this.runtime.renderer.dirty = true
   }
 
+  allLoadedShaders() {
+    return JSON.stringify(Object.keys(this.QuakeManager.loadedShaders))
+  }
+
   applyShader({ SHADER, TARGET }, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
@@ -508,6 +698,97 @@ class QuakeFragment {
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
     if (drawable.QuakeFragment?.shader === SHADER) {
       delete drawable.QuakeFragment
+    }
+  }
+
+  setNumber({ UNIFORM, TARGET, VALUE}, util) {
+    const target = this._getTargetByIdOrName(TARGET, util)
+    const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+    if(!drawable.QuakeFragment) return;
+
+    drawable.QuakeFragment.uniforms[UNIFORM] = VALUE
+  }
+
+  setVec2({ UNIFORM, TARGET, VALUE1, VALUE2}, util) {
+    const target = this._getTargetByIdOrName(TARGET, util)
+    const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+    if(!drawable.QuakeFragment) return;
+
+    drawable.QuakeFragment.uniforms[UNIFORM] = [VALUE1, VALUE2]
+  }
+
+  setVec3({ UNIFORM, TARGET, VALUE1, VALUE2, VALUE3}, util) {
+    const target = this._getTargetByIdOrName(TARGET, util)
+    const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+    if(!drawable.QuakeFragment) return;
+
+    drawable.QuakeFragment.uniforms[UNIFORM] = [VALUE1, VALUE2, VALUE3]
+  }
+  
+  setVec4({ UNIFORM, TARGET, VALUE1, VALUE2, VALUE3, VALUE4}, util) {
+    const target = this._getTargetByIdOrName(TARGET, util)
+    const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+    if(!drawable.QuakeFragment) return;
+
+    drawable.QuakeFragment.uniforms[UNIFORM] = [VALUE1, VALUE2, VALUE3, VALUE4]
+  }
+
+  setMatrix({ UNIFORM, TARGET, MATRIX}, util) {
+    const target = this._getTargetByIdOrName(TARGET, util)
+    const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+    if(!drawable.QuakeFragment) return;
+
+    //copy pasted from pen+. cmon, i cant bother to write it myself when ctrl+c ctrl+v do the job uwu
+    let converted = JSON.parse(MATRIX);
+
+    if (!Array.isArray(converted)) return;
+    converted = converted.map(function (str) {
+      return parseInt(str);
+    });
+
+    drawable.QuakeFragment.uniforms[UNIFORM] = converted
+  }
+
+  setTexture({ UNIFORM, TARGET, TEXTURE}, util) {
+    const target = this._getTargetByIdOrName(TARGET, util)
+    const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+    if(!drawable.QuakeFragment) return;
+
+    drawable.QuakeFragment.uniforms[UNIFORM] = this.QuakeManager.textures[Scratch.Cast.toString(TEXTURE)]
+  }
+
+  allTextures() {
+    return JSON.stringify(Object.keys(this.QuakeManager.textures))
+  }
+
+  deleteTexture({ NAME }) {
+    if (this.QuakeManager.textures[NAME]) {
+      this.gl.deleteTexture(this.QuakeManager.textures[NAME]);
+      delete this.QuakeManager.textures[NAME]
+    }
+  }
+
+  deleteAllTextures() {
+    this.QuakeManager.textures.forEach(texture => {
+      this.gl.deleteTexture(texture);
+    });
+    this.QuakeManager.textures = []
+  }
+
+  createUpdateTexture({ NAME, TEXTURE}, util) {
+    const textureName = Scratch.Cast.toString(NAME)
+    this.deleteTexture(textureName)
+    if (/(.*?)\.(png|svg|jpg|jpeg)/.test(String(TEXTURE))) {
+      const id = String(TEXTURE).split(".")[0]
+      const ext = String(TEXTURE).split(".")[1]
+      const assetType = ext === 'svg' ? this.runtime.storage.AssetType.ImageVector : this.runtime.storage.AssetType.ImageBitmap
+      const asset = this.runtime.storage.load(assetType, id, ext).then(asset => {
+        const texture = twgl.createTexture(this.gl, {src: asset.encodeDataURI()})
+        this.QuakeManager.textures[textureName] = texture
+      });
+    } else {
+      const texture = twgl.createTexture(this.gl, {src: TEXTURE})
+      this.QuakeManager.textures[textureName] = texture
     }
   }
 
@@ -573,85 +854,6 @@ class QuakeFragment {
     });
 
     return list;
-  }
-
-  // thanks stackoverflow
-  // https://stackoverflow.com/a/18804083
-  __getCanvasFromTexture(gl, texture, width, height, dx, dy) {
-    const framebuffer = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
-
-    const data = new Uint8Array(width * height * 4);
-    gl.readPixels(0, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, data);
-
-    gl.deleteFramebuffer(framebuffer);
-
-    const imageData = new ImageData(width, height);
-    imageData.data.set(data);
-
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext("2d");
-
-    context.putImageData(imageData, dx, dy);
-
-    return canvas;
-  }
-
-  //Thanks CST :3
-  //https://github.com/CST1229/turbowarp-extensions/blob/3d/extensions/CST1229/3d.js
-  __getCanvasFromSkin(skin) {
-    const emptyCanvas = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 1;
-      canvas.height = 1;
-      return canvas;
-    }
-
-    switch (skin.constructor) {
-      case this.runtime.renderer.exports.BitmapSkin: {
-        if (skin._textureSize[0] < 1 || skin._textureSize[1] < 1)
-          return emptyCanvas();
-        return this.__getCanvasFromTexture(
-          this.runtime.renderer.gl,
-          skin.getTexture(),
-          skin._textureSize[0] * 2,
-          skin._textureSize[1] * 2,
-          skin._textureSize[0] / 2,
-          skin._textureSize[1] / 2
-        );
-      }
-      case this.runtime.renderer.exports.SVGSkin: {
-        // code copy-pasted from scratch-render
-        const INDEX_OFFSET = 8;
-
-        const textureScale = 200;
-
-        const scaleMax = textureScale ? Math.max(Math.abs(textureScale), Math.abs(textureScale)) : 100;
-        const requestedScale = Math.min(scaleMax / 100, skin._maxTextureScale);
-        const mipLevel = Math.max(Math.ceil(Math.log2(requestedScale)) + INDEX_OFFSET, 0);
-        const mipScale = Math.pow(2, mipLevel - INDEX_OFFSET);
-
-        const sizeX = Math.ceil(skin._size[0] * mipScale);
-        const sizeY = Math.ceil(skin._size[1] * mipScale)
-        if (sizeX < 1 || sizeY < 1)
-          return emptyCanvas();
-
-        return this.__getCanvasFromTexture(
-          this.runtime.renderer.gl,
-          skin.getTexture([textureScale, textureScale]),
-          sizeX,
-          sizeY,
-          0,
-          0
-        );
-      }
-      default:
-        console.error("Could not get skin image data:", skin);
-        throw new TypeError("Could not get skin image data");
-    }
   }
 }
 
