@@ -863,7 +863,7 @@ window.tempExt = {
     name: "quakefragment.extensionName",
     description: "quakefragment.description",
     extensionId: "quakefragment",
-    //iconURL: cover,
+    //iconURL: banner.png,
     insetIconURL: icon,
     featured: true,
     disabled: false,
