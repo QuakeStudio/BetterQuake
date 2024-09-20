@@ -32,27 +32,27 @@
   },
 
   "zh-cn": {
-    "extensionName": "地震碎片",
+    "extensionName": "雷神 Pro",
 
-    "me": "我",
+    "me": "自己",
     "stage": "阶段",
-    "example": "例子",
+    "example": "示例",
 
-    "Enable": "使能够",
+    "Enable": "启用",
     "Disable": "禁用",
 
-    "[SHOULD] auto re-render": "[SHOULD]]自动重新渲染",
-    "All loaded shaders": "所有加载的着色器",
-    "Remove [SHADER]": "删除 [SHADER]",
+    "[SHOULD] auto re-render": "[SHOULD] 自动重新渲染",
+    "All loaded shaders": "所有已加载的着色器",
+    "Remove [SHADER]": "移除 [SHADER]",
     "Reload [SHADER]": "重新加载 [SHADER]",
     "Apply [SHADER] to [TARGET]": "将 [SHADER] 应用于 [TARGET]",
-    "Detach [SHADER] from [TARGET]": "将 [SHADER] 从 [TARGET] 分离",
+    "Detach [SHADER] from [TARGET]": "从 [TARGET] 分离 [SHADER]",
 
-    "Uniforms": "制服",
-    "Set number [UNIFORM] of [TARGET] to [VALUE]": "将 [TARGET] 的编号 [UNIFORM] 设置为 [VALUE]",
-    "Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]": "将 [TARGET] 的向量 2 [UNIFORM] 设置为 [VALUE1][VALUE2]",
-    "Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]": "将 [TARGET] 的向量 3 [UNIFORM] 设置为 [VALUE1][VALUE2][VALUE3]",
-    "Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]": "将 [TARGET] 的向量 4 [UNIFORM] 设置为 [VALUE1][VALUE2][VALUE3][VALUE4]",
+    "Uniforms": "统一变量",
+    "Set number [UNIFORM] of [TARGET] to [VALUE]": "将 [TARGET] 的统一变量 [UNIFORM] 设置为 [VALUE]",
+    "Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]": "将 [TARGET] 的二维向量 [UNIFORM] 设置为 [VALUE1][VALUE2]",
+    "Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]": "将 [TARGET] 的三维向量 [UNIFORM] 设置为 [VALUE1][VALUE2][VALUE3]",
+    "Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]": "将 [TARGET] 的四维向量 [UNIFORM] 设置为 [VALUE1][VALUE2][VALUE3][VALUE4]",
     "Set matrix [UNIFORM] of [TARGET] to [MATRIX]": "将 [TARGET] 的矩阵 [UNIFORM] 设置为 [MATRIX]",
     "Set texture [UNIFORM] of [TARGET] to [TEXTURE]": "将 [TARGET] 的纹理 [UNIFORM] 设置为 [TEXTURE]",
 
