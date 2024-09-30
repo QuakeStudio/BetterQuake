@@ -139,6 +139,7 @@ void main() {
 }
     `
 
+//this is the __example__ shader
 const fragmentShaderSource = `
 #version 300 es
 #ifdef GL_ES
@@ -173,6 +174,7 @@ class BetterQuake {
     this.autoReRender = true
 
     //for compatibility with Spine skins
+    //todo: replace with getSpineSkinClass()
     const skinClass = this.runtime.renderer.getSkinClass()
 
     const oldDrawThese = this.runtime.renderer._drawThese
@@ -216,8 +218,9 @@ class BetterQuake {
           // If the skin or texture isn't ready yet, skip it.
           if (!drawable.skin || !drawable.skin.getTexture(drawableScale)) continue;
     
-          // if the skin is not a Skin, we assume its an instance of SpineSkin
+          // If the skin is not a Skin, we assume its an instance of SpineSkin
           // todo: replace with the actual SpineSkin class
+          // tbh i dont know if this works. HCN if you are reading this, please merge https://github.com/Gandi-IDE/scratch-render/pull/1
           if (!drawable.skin instanceof skinClass) {
               renderer._doExitDrawRegion(); // exit any draw region
               drawable.skin.render(drawable, drawableScale, projection, opts); // draw spine object
@@ -236,6 +239,7 @@ class BetterQuake {
               drawable.injectExtraEffectUniforms(uniforms);
           }
     
+          // Our custom shader
           const drawableShader = runtime.QuakeManager.loadedShaders[drawable.BetterQuake?.shader]
           const newShader = drawableShader ? drawableShader.programInfo : renderer._shaderManager.getShader(drawMode, effectBits)
     
