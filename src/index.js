@@ -172,72 +172,101 @@ class QuakeFragment {
     this.gl = runtime.renderer._gl
     this.autoReRender = true
 
-    //Thanks obviousalexc :3
-    //https://github.com/Pen-Group/extensions/blob/main/extensions/ShadedStamps/extension.js#L121
+    //for compatibility with Spine skins
+    const skinClass = this.runtime.renderer.getSkinClass()
+
+    const oldDrawThese = this.runtime.renderer._drawThese
     this.newDrawThese = (drawables, drawMode, projection, opts = {}) => {
-      const gl = runtime.renderer._gl;
+      const renderer = this.runtime.renderer
+      const gl = renderer._gl;
       let currentShader = null;
-  
+      if (renderer.spineManager) {
+        renderer.spineManager.updateTime();
+      }
+    
       const framebufferSpaceScaleDiffers = (
           'framebufferWidth' in opts && 'framebufferHeight' in opts &&
-          opts.framebufferWidth !== runtime.renderer._nativeSize[0] && opts.framebufferHeight !== runtime.renderer._nativeSize[1]
+          opts.framebufferWidth !== renderer._nativeSize[0] && opts.framebufferHeight !== renderer._nativeSize[1]
       );
-  
-      const numDrawables = drawables.length;
-      for (let drawableIndex = 0; drawableIndex < numDrawables; ++drawableIndex) {
+    
+      const startIndex = Math.max(0, opts.startIndex ?? 0);
+      const endIndex = Math.min(drawables.length, opts.endIndex ?? drawables.length);
+    
+      for (let drawableIndex = startIndex; drawableIndex < endIndex; ++drawableIndex) {
           const drawableID = drawables[drawableIndex];
-  
+    
           // If we have a filter, check whether the ID fails
           if (opts.filter && !opts.filter(drawableID)) continue;
-  
-          const drawable = runtime.renderer._allDrawables[drawableID];
+    
+          const drawable = renderer._allDrawables[drawableID];
           /** @todo check if drawable is inside the viewport before anything else */
-  
+    
           // Hidden drawables (e.g., by a "hide" block) are not drawn unless
           // the ignoreVisibility flag is used (e.g. for stamping or touchingColor).
           if (!drawable.getVisible() && !opts.ignoreVisibility) continue;
-  
+    
           // drawableScale is the "framebuffer-pixel-space" scale of the drawable, as percentages of the drawable's
           // "native size" (so 100 = same as skin's "native size", 200 = twice "native size").
           // If the framebuffer dimensions are the same as the stage's "native" size, there's no need to calculate it.
           const drawableScale = framebufferSpaceScaleDiffers ? [
-              drawable.scale[0] * opts.framebufferWidth / runtime.renderer._nativeSize[0],
-              drawable.scale[1] * opts.framebufferHeight / runtime.renderer._nativeSize[1]
+              drawable.scale[0] * opts.framebufferWidth / renderer._nativeSize[0],
+              drawable.scale[1] * opts.framebufferHeight / renderer._nativeSize[1]
           ] : drawable.scale;
-  
+    
           // If the skin or texture isn't ready yet, skip it.
           if (!drawable.skin || !drawable.skin.getTexture(drawableScale)) continue;
-  
-          // Skip private skins, if requested.
-          if (opts.skipPrivateSkins && drawable.skin.private) continue;
-  
-          let uniforms = {};
-  
+    
+          // if the skin is not a Skin, we assume its an instance of SpineSkin
+          // todo: replace with the actual SpineSkin class
+          if (!drawable.skin instanceof skinClass) {
+              renderer._doExitDrawRegion(); // exit any draw region
+              drawable.skin.render(drawable, drawableScale, projection, opts); // draw spine object
+              // reset blend mode because spine renderer changes it
+              // NOTE -  change blend is a costly operation, so we only do it when necessary
+              gl.enable(gl.BLEND);
+              continue;
+          }
+    
+          const uniforms = {};
+    
           let effectBits = drawable.enabledEffects;
           effectBits &= Object.prototype.hasOwnProperty.call(opts, 'effectMask') ? opts.effectMask : effectBits;
-  
+          if (drawable.enabledExtraEffect !== 0) {
+              effectBits |= drawable.enabledExtraEffect;
+              drawable.injectExtraEffectUniforms(uniforms);
+          }
+    
           const drawableShader = runtime.QuakeManager.loadedShaders[drawable.QuakeFragment?.shader]
-          const newShader = drawableShader ? drawableShader.programInfo : runtime.renderer._shaderManager.getShader(drawMode, effectBits)
-  
+          const newShader = drawableShader ? drawableShader.programInfo : renderer._shaderManager.getShader(drawMode, effectBits)
+    
           // Manually perform region check. Do not create functions inside a
           // loop.
-          // ! no
-          if (runtime.renderer._regionId !== newShader) {
-            runtime.renderer._doExitDrawRegion();
-            runtime.renderer._regionId = newShader;
-  
+          if (renderer._regionId !== newShader) {
+              renderer._doExitDrawRegion();
+              renderer._regionId = newShader;
+    
               currentShader = newShader;
               gl.useProgram(currentShader.program);
-              twgl.setBuffersAndAttributes(gl, currentShader, runtime.renderer._bufferInfo);
+              twgl.setBuffersAndAttributes(gl, currentShader, renderer._bufferInfo);
               Object.assign(uniforms, {
                   u_projectionMatrix: projection
               });
           }
-  
+          // if drawable has its own project, use it
+          if (drawable.customizedProjection && drawMode !== 'straightAlpha') {
+              Object.assign(uniforms, {
+                  u_projectionMatrix: drawable.customizedProjection
+              });
+          } else {
+              Object.assign(uniforms, {
+                  u_projectionMatrix: projection
+              });
+          }
+    
           Object.assign(uniforms,
               drawable.skin.getUniforms(drawableScale),
               drawable.getUniforms());
-  
+    
           // Apply extra uniforms after the Drawable's, to allow overwriting.
           if (opts.extraUniforms) {
               Object.assign(uniforms, opts.extraUniforms);
@@ -247,7 +276,7 @@ class QuakeFragment {
             drawable.QuakeFragment.uniforms.time = this.runtime.ioDevices.clock.projectTimer()
             Object.assign(uniforms, drawable.QuakeFragment.uniforms)
           }
-  
+    
           if (uniforms.u_skin || drawable.QuakeFragment.uniforms.tDiffuse) {
             twgl.setTextureParameters(
                 gl, uniforms.u_skin ? uniforms.u_skin : drawable.QuakeFragment.uniforms.tDiffuse, {
@@ -255,31 +284,15 @@ class QuakeFragment {
                 }
             );
           }
-  
-          twgl.setUniforms(currentShader, uniforms);
-          twgl.drawBufferInfo(gl, runtime.renderer._bufferInfo, gl.TRIANGLES);
-      }
-  
-      runtime.renderer._regionId = null;
-    };
-
-    this.runtime.renderer.ext_quakefragment = this
-    patch(this.runtime.renderer, {
-      _drawThese(og, drawables, drawMode, projection, opts = {}) {
-        const drawablesWithShader = drawables.filter(drawable => 
-          this._allDrawables[drawable].hasOwnProperty("QuakeFragment")
-        );
-        this.ext_quakefragment.newDrawThese(drawablesWithShader, drawMode, projection, opts);
     
-        const drawablesWithoutShader = drawables.filter(drawable => 
-          !this._allDrawables[drawable].hasOwnProperty("QuakeFragment")
-        );
-        og(drawablesWithoutShader, drawMode, projection, opts);
-
-        this.dirty = this.ext_quakefragment.autoReRender
+          twgl.setUniforms(currentShader, uniforms);
+          twgl.drawBufferInfo(gl, renderer._bufferInfo, gl.TRIANGLES);
       }
-
-    })
+    
+      renderer._regionId = null;
+      renderer.dirty = this.autoReRender
+    }
+    this.runtime.renderer._drawThese = this.newDrawThese
 
     const newL10n = {};
     for (const lang in l10n) {
