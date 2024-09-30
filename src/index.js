@@ -158,7 +158,7 @@ void main() {
 }
 `
 
-class QuakeFragment {
+class BetterQuake {
   constructor(runtime) {
     window.TEST = this
 
@@ -236,7 +236,7 @@ class QuakeFragment {
               drawable.injectExtraEffectUniforms(uniforms);
           }
     
-          const drawableShader = runtime.QuakeManager.loadedShaders[drawable.QuakeFragment?.shader]
+          const drawableShader = runtime.QuakeManager.loadedShaders[drawable.BetterQuake?.shader]
           const newShader = drawableShader ? drawableShader.programInfo : renderer._shaderManager.getShader(drawMode, effectBits)
     
           // Manually perform region check. Do not create functions inside a
@@ -272,14 +272,17 @@ class QuakeFragment {
               Object.assign(uniforms, opts.extraUniforms);
           }
 
+          // Apply BetterQuake uniforms
           if (drawableShader) {
-            drawable.QuakeFragment.uniforms.time = this.runtime.ioDevices.clock.projectTimer()
-            Object.assign(uniforms, drawable.QuakeFragment.uniforms)
+            drawable.BetterQuake.uniforms.time = this.runtime.ioDevices.clock.projectTimer()
+            Object.assign(uniforms, drawable.BetterQuake.uniforms)
           }
     
-          if (uniforms.u_skin || drawable.QuakeFragment.uniforms.tDiffuse) {
+          if (uniforms.u_skin || drawable.BetterQuake.uniforms.tDiffuse) {
+            //should bothh uniforms be available to use?
+            //the only reason i want to keep tDiffuse is for compatibility with GandiQuake
             twgl.setTextureParameters(
-                gl, uniforms.u_skin ? uniforms.u_skin : drawable.QuakeFragment.uniforms.tDiffuse, {
+                gl, uniforms.u_skin ? uniforms.u_skin : drawable.BetterQuake.uniforms.tDiffuse, {
                     minMag: drawable.skin.useNearest(drawableScale, drawable) ? gl.NEAREST : gl.LINEAR
                 }
             );
@@ -633,8 +636,8 @@ class QuakeFragment {
     // Clean up any references to the shader in drawables
     for (let i = 0; i < this.runtime.renderer._allDrawables.length; i++) {
       const drawable = this.runtime.renderer._allDrawables[i];
-      if (drawable.QuakeFragment?.shader === SHADER) {
-        delete drawable.QuakeFragment;
+      if (drawable.BetterQuake?.shader === SHADER) {
+        delete drawable.BetterQuake;
       }
     }
   }
@@ -645,7 +648,7 @@ class QuakeFragment {
     const shaderUsers = []
     for (let i = 0; i < this.runtime.renderer._allDrawables.length; i++) {
       const drawable = this.runtime.renderer._allDrawables[i];
-      if (drawable.QuakeFragment?.shader === SHADER) {
+      if (drawable.BetterQuake?.shader === SHADER) {
         shaderUsers.push(drawable)
       }
     }
@@ -669,9 +672,9 @@ class QuakeFragment {
     this.QuakeManager.loadedShaders[SHADER] = drawableShader
 
     shaderUsers.forEach(drawable => {
-      drawable.QuakeFragment = {}
-      drawable.QuakeFragment.shader = SHADER
-      drawable.QuakeFragment.uniforms = {
+      drawable.BetterQuake = {}
+      drawable.BetterQuake.shader = SHADER
+      drawable.BetterQuake.uniforms = {
         u_color: [Math.random(), Math.random(), Math.random(), 1],
       }
     });
@@ -694,12 +697,12 @@ class QuakeFragment {
       drawableShader = this.QuakeManager.loadedShaders[SHADER]
     }
 
-    if (!drawable.QuakeFragment) {
-      drawable.QuakeFragment = {}
+    if (!drawable.BetterQuake) {
+      drawable.BetterQuake = {}
     }
 
-    drawable.QuakeFragment.shader = SHADER
-    drawable.QuakeFragment.uniforms = {
+    drawable.BetterQuake.shader = SHADER
+    drawable.BetterQuake.uniforms = {
       u_color: [Math.random(), Math.random(), Math.random(), 1],
     }
 
@@ -709,47 +712,47 @@ class QuakeFragment {
   detachShader({ SHADER, TARGET }, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
-    if (drawable.QuakeFragment?.shader === SHADER) {
-      delete drawable.QuakeFragment
+    if (drawable.BetterQuake?.shader === SHADER) {
+      delete drawable.BetterQuake
     }
   }
 
   setNumber({ UNIFORM, TARGET, VALUE}, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
-    if(!drawable.QuakeFragment) return;
+    if(!drawable.BetterQuake) return;
 
-    drawable.QuakeFragment.uniforms[UNIFORM] = VALUE
+    drawable.BetterQuake.uniforms[UNIFORM] = VALUE
   }
 
   setVec2({ UNIFORM, TARGET, VALUE1, VALUE2}, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
-    if(!drawable.QuakeFragment) return;
+    if(!drawable.BetterQuake) return;
 
-    drawable.QuakeFragment.uniforms[UNIFORM] = [VALUE1, VALUE2]
+    drawable.BetterQuake.uniforms[UNIFORM] = [VALUE1, VALUE2]
   }
 
   setVec3({ UNIFORM, TARGET, VALUE1, VALUE2, VALUE3}, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
-    if(!drawable.QuakeFragment) return;
+    if(!drawable.BetterQuake) return;
 
-    drawable.QuakeFragment.uniforms[UNIFORM] = [VALUE1, VALUE2, VALUE3]
+    drawable.BetterQuake.uniforms[UNIFORM] = [VALUE1, VALUE2, VALUE3]
   }
   
   setVec4({ UNIFORM, TARGET, VALUE1, VALUE2, VALUE3, VALUE4}, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
-    if(!drawable.QuakeFragment) return;
+    if(!drawable.BetterQuake) return;
 
-    drawable.QuakeFragment.uniforms[UNIFORM] = [VALUE1, VALUE2, VALUE3, VALUE4]
+    drawable.BetterQuake.uniforms[UNIFORM] = [VALUE1, VALUE2, VALUE3, VALUE4]
   }
 
   setMatrix({ UNIFORM, TARGET, MATRIX}, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
-    if(!drawable.QuakeFragment) return;
+    if(!drawable.BetterQuake) return;
 
     //copy pasted from pen+. cmon, i cant bother to write it myself when ctrl+c ctrl+v do the job uwu
     let converted = JSON.parse(MATRIX);
@@ -759,15 +762,15 @@ class QuakeFragment {
       return parseInt(str);
     });
 
-    drawable.QuakeFragment.uniforms[UNIFORM] = converted
+    drawable.BetterQuake.uniforms[UNIFORM] = converted
   }
 
   setTexture({ UNIFORM, TARGET, TEXTURE}, util) {
     const target = this._getTargetByIdOrName(TARGET, util)
     const drawable = this.runtime.renderer._allDrawables[target.drawableID]
-    if(!drawable.QuakeFragment) return;
+    if(!drawable.BetterQuake) return;
 
-    drawable.QuakeFragment.uniforms[UNIFORM] = this.QuakeManager.textures[Scratch.Cast.toString(TEXTURE)]
+    drawable.BetterQuake.uniforms[UNIFORM] = this.QuakeManager.textures[Scratch.Cast.toString(TEXTURE)]
   }
 
   allTextures() {
@@ -871,11 +874,11 @@ class QuakeFragment {
 }
 
 window.tempExt = {
-  Extension: QuakeFragment,
+  Extension: BetterQuake,
   info: {
-    name: "quakefragment.extensionName",
-    description: "quakefragment.description",
-    extensionId: "quakefragment",
+    name: "BetterQuake.extensionName",
+    description: "BetterQuake.description",
+    extensionId: "BetterQuake",
     //iconURL: banner.png,
     insetIconURL: icon,
     featured: true,
@@ -893,12 +896,12 @@ window.tempExt = {
   },
   l10n: {
     "zh-cn": {
-      "quakefragment.extensionName": "Better Quake",
-      "quakefragment.description": "Better shader loader",
+      "BetterQuake.extensionName": "Better Quake",
+      "BetterQuake.description": "Better shader loader",
     },
     en: {
-      "quakefragment.extensionName": "Better Quake",
-      "quakefragment.description": "Better shader loader",
+      "BetterQuake.extensionName": "Better Quake",
+      "BetterQuake.description": "Better shader loader",
     },
   },
 }
