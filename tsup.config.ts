@@ -16,6 +16,10 @@ export default defineConfig({
 // License: MPL-2.0
 `
   },
+  loader: {
+    '.glsl': 'text',
+    '.svg': 'base64',
+  },
   platform: 'browser',
   clean: true
 })
