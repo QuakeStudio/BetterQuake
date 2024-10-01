@@ -2,6 +2,7 @@ import * as twgl from 'twgl.js'
 import vertexShaderSource from './vertexShaderSource.glsl'
 import fragmentShaderSource from './fragmentShaderSource.glsl'
 import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
+
 ;(Scratch => {
   const icon = `data:image/svg+xml;base64,${BetterQuakeIcon}`
   const extensionId = 'betterquake'
