@@ -153,6 +153,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
           if (drawableShader) {
             drawable.BetterQuake.uniforms.time =
               this.runtime.ioDevices.clock.projectTimer()
+            drawable.BetterQuake.uniforms.tDiffuse = uniforms.u_skin
             Object.assign(uniforms, drawable.BetterQuake.uniforms)
           }
 
@@ -519,7 +520,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       // Clean up any references to the shader in drawables
       for (let i = 0; i < this.runtime.renderer._allDrawables.length; i++) {
         const drawable = this.runtime.renderer._allDrawables[i]
-        if (drawable.BetterQuake?.shader === SHADER) {
+        if (drawable?.BetterQuake?.shader === SHADER) {
           delete drawable.BetterQuake
         }
       }
@@ -531,7 +532,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       const shaderUsers = []
       for (let i = 0; i < this.runtime.renderer._allDrawables.length; i++) {
         const drawable = this.runtime.renderer._allDrawables[i]
-        if (drawable.BetterQuake?.shader === SHADER) {
+        if (drawable?.BetterQuake?.shader === SHADER) {
           shaderUsers.push(drawable)
         }
       }
