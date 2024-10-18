@@ -17,6 +17,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
 
       this.runtime.QuakeManager.loadedShaders = []
       this.runtime.QuakeManager.textures = []
+      this.runtime.QuakeManager.renderTextures = []
       this.QuakeManager = this.runtime.QuakeManager
 
       this.gl = runtime.renderer._gl
@@ -407,7 +408,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
             opcode: 'setTexture',
             blockType: Scratch.BlockType.COMMAND,
             text: Scratch.translate(
-              'Set texture [UNIFORM] of [TARGET] to [TEXTURE]'
+              'Set texture [UNIFORM] of [TARGET] to [TEXTURE] from [TEXTURE_TYPE]'
             ),
             arguments: {
               UNIFORM: {
@@ -421,7 +422,11 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
               TEXTURE: {
                 type: Scratch.ArgumentType.STRING,
                 defaultValue: 'Scratch Cat'
-              }
+              },
+              TEXTURE_TYPE: {
+                type: Scratch.ArgumentType.STRING,
+                menu: 'TEXTURE_TYPE_MENU'
+              },
             }
           },
           {
@@ -468,7 +473,75 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
                 defaultValue: 'dc7f14b8438834de154cebaf827b6b4d.svg'
               }
             }
-          }
+          },
+          {
+            blockType: Scratch.BlockType.LABEL,
+            text: Scratch.translate('Render Textures')
+          },
+          {
+            opcode: 'allRenderTextures',
+            blockType: Scratch.BlockType.REPORTER,
+            text: Scratch.translate('All render textures'),
+            arguments: {},
+            disableMonitor: true
+          },
+          {
+            opcode: 'deleteAllRenderTextures',
+            blockType: Scratch.BlockType.COMMAND,
+            text: Scratch.translate('Delete all render textures'),
+            arguments: {}
+          },
+          {
+            opcode: 'deleteRenderTexture',
+            blockType: Scratch.BlockType.COMMAND,
+            text: Scratch.translate('Delete render texture called [NAME]'),
+            arguments: {
+              NAME: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: 'Scratch Cat'
+              }
+            }
+          },
+          {
+            opcode: 'createUpdateRenderTexture',
+            blockType: Scratch.BlockType.COMMAND,
+            text: Scratch.translate(
+              'Create/Update render texture called [NAME] with size [WIDTH]x[HEIGHT]'
+            ),
+            arguments: {
+              NAME: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: 'Scratch Cat'
+              },
+              WIDTH: {
+                type: Scratch.ArgumentType.NUMBER,
+                defaultValue: '100'
+              },
+              HEIGHT: {
+                type: Scratch.ArgumentType.NUMBER,
+                defaultValue: '100'
+              }
+            }
+          },
+          {
+            opcode: 'applyToRenderTexture',
+            blockType: Scratch.BlockType.COMMAND,
+            text: Scratch.translate('Apply [SHADER] to render texture called [NAME] with uniforms [UNIFORMS]'),
+            arguments: {
+              SHADER: {
+                type: Scratch.ArgumentType.STRING,
+                menu: 'SHADER_MENU'
+              },
+              NAME: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: 'Scratch Cat'
+              },
+              UNIFORMS: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: '{u_color: [1, 1, 0]}'
+              },
+            }
+          },
         ],
         menus: {
           DRAWABLES_MENU: {
@@ -488,6 +561,18 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
               {
                 text: Scratch.translate('Disable'),
                 value: 'false'
+              }
+            ]
+          },
+          TEXTURE_TYPE_MENU: {
+            items: [
+              {
+                text: Scratch.translate('normal texture'),
+                value: 'texture'
+              },
+              {
+                text: Scratch.translate('render texture'),
+                value: 'renderTexture'
               }
             ]
           }
@@ -674,13 +759,23 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       drawable.BetterQuake.uniforms[UNIFORM] = converted
     }
 
-    setTexture({ UNIFORM, TARGET, TEXTURE }, util) {
+    setTexture({ UNIFORM, TARGET, TEXTURE, TEXTURE_TYPE }, util) {
       const target = this._getTargetByIdOrName(TARGET, util)
       const drawable = this.runtime.renderer._allDrawables[target.drawableID]
       if (!drawable.BetterQuake) return
 
-      drawable.BetterQuake.uniforms[UNIFORM] =
-        this.QuakeManager.textures[Scratch.Cast.toString(TEXTURE)]
+      switch(TEXTURE_TYPE) {
+        default:
+          // waterfall down
+        case 'texture':
+          drawable.BetterQuake.uniforms[UNIFORM] = 
+            this.QuakeManager.textures[Scratch.Cast.toString(TEXTURE)]
+          break;
+        case 'renderTexture':
+          drawable.BetterQuake.uniforms[UNIFORM] = 
+            this.QuakeManager.renderTextures[Scratch.Cast.toString(TEXTURE)].texture
+          break;
+      }
     }
 
     allTextures() {
@@ -737,6 +832,108 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       }
     }
 
+    allRenderTextures() {
+      return JSON.stringify(Object.keys(this.QuakeManager.renderTextures));
+    }
+    
+    deleteRenderTexture({ NAME }) {
+      const renderTexture = this.QuakeManager.renderTextures[NAME];
+      if (renderTexture) {
+        this.gl.deleteTexture(renderTexture.texture);
+        this.gl.deleteFramebuffer(renderTexture.framebufferInfo.framebuffer);
+        delete this.QuakeManager.renderTextures[NAME];
+      }
+    }
+    
+    deleteAllRenderTextures() {
+      Object.values(this.QuakeManager.renderTextures).forEach(renderTexture => {
+        this.gl.deleteTexture(renderTexture.texture);
+        this.gl.deleteFramebuffer(renderTexture.framebufferInfo.framebuffer);
+      });
+      this.QuakeManager.renderTextures = {};
+    }
+    
+    createUpdateRenderTexture({ NAME, WIDTH, HEIGHT }) {
+      const textureName = Scratch.Cast.toString(NAME);
+      this.deleteRenderTexture(textureName);
+    
+      const gl = this.gl;
+    
+      // Create framebuffer with specified dimensions
+      const framebufferInfo = twgl.createFramebufferInfo(gl, null, WIDTH, HEIGHT);
+      const texture = twgl.createTexture(gl, {
+        width: WIDTH,
+        height: HEIGHT,
+        min: gl.LINEAR,
+        mag: gl.LINEAR,
+        wrap: gl.CLAMP_TO_EDGE,
+      });
+    
+      twgl.bindFramebufferInfo(gl, framebufferInfo);
+      gl.framebufferTexture2D(
+        gl.FRAMEBUFFER,
+        gl.COLOR_ATTACHMENT0,
+        gl.TEXTURE_2D,
+        texture,
+        0
+      );
+    
+      this.QuakeManager.renderTextures[NAME] = {
+        framebufferInfo: framebufferInfo,
+        texture: texture
+      };
+    }    
+    
+    applyToRenderTexture({ SHADER, NAME, UNIFORMS }) {
+      // Ensure UNIFORMS is a valid JSON string or object
+      let uniforms;
+      try {
+        uniforms = typeof UNIFORMS === 'string' ? JSON.parse(UNIFORMS) : UNIFORMS;
+      } catch (e) {
+        console.error('Invalid JSON string for UNIFORMS:', e);
+        return;
+      }
+      if (typeof uniforms !== 'object') return;
+    
+      // Retrieve shader
+      let shader = this.QuakeManager.loadedShaders[SHADER];
+    
+      // If shader doesn't exist, create it
+      if (!shader) {
+        this.reloadShader({ SHADER });
+        shader = this.QuakeManager.loadedShaders[SHADER];
+      }
+    
+      const gl = this.gl;
+
+      const renderTexture = this.QuakeManager.renderTextures[NAME];
+      twgl.bindFramebufferInfo(this.gl, renderTexture.framebufferInfo);
+    
+      gl.bindTexture(gl.TEXTURE_2D, renderTexture.texture);
+
+      gl.clearColor(0, 0, 1, 1);   // clear to blue
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    
+      this.gl.useProgram(shader.programInfo.program);
+
+      twgl.setBuffersAndAttributes(
+        this.gl,
+        shader,
+        this.runtime.renderer._bufferInfo
+      );
+    
+      twgl.setUniforms(shader, uniforms);
+    
+      // Draw
+      twgl.drawBufferInfo(gl, this.runtime.renderer._bufferInfo);
+    
+      // Unbind
+      twgl.bindFramebufferInfo(gl, null);
+      gl.bindTexture(gl.TEXTURE_2D, renderTexture.texture);
+      gl.clearColor(1, 1, 1, 1);   // clear to white
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    }
+    
     _getTargetByIdOrName(name, util) {
       if (name === '__myself__') return util.target
       if (name === '__stage__') return this.runtime.getTargetForStage()
