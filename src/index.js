@@ -10,6 +10,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
   class BetterQuake {
     constructor(runtime) {
       this.runtime = runtime
+      window.TEST = this
 
       //usefull for integration with other extensions
       if (!this.runtime.QuakeManager) this.runtime.QuakeManager = {}
@@ -26,6 +27,8 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       const skinClass = this.runtime.renderer.getSkinClass
         ? this.runtime.renderer.getSkinClass()
         : null
+      
+      const isGandi = this.runtime.gandi ? true : false
 
       const oldDrawThese = this.runtime.renderer._drawThese /** @todo If you do not use _drawThese then just remove it */
       // However this is not recommended
@@ -85,7 +88,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
           // If the skin is not a Skin, we assume its an instance of SpineSkin
           // todo: replace with the actual SpineSkin class
           // tbh i dont know if this works. HCN if you are reading this, please merge https://github.com/Gandi-IDE/scratch-render/pull/1
-          if (!skinClass || !(drawable.skin instanceof skinClass)) {
+          if (isGandi && (!skinClass || !(drawable.skin instanceof skinClass))) {
             renderer._doExitDrawRegion() // exit any draw region
             drawable.skin.render(drawable, drawableScale, projection, opts) // draw spine object
             // reset blend mode because spine renderer changes it
@@ -100,7 +103,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
           effectBits &= Object.prototype.hasOwnProperty.call(opts, 'effectMask')
             ? opts.effectMask
             : effectBits
-          if (drawable.enabledExtraEffect !== 0) {
+          if (drawable.enabledExtraEffect !== 0 && isGandi) {
             effectBits |= drawable.enabledExtraEffect
             drawable.injectExtraEffectUniforms(uniforms)
           }

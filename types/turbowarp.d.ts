@@ -2,4 +2,5 @@
 
 declare namespace Scratch {
   const runtime: VM.Runtime
+  const translate: any
 }
