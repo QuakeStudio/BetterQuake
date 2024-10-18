@@ -19,14 +19,19 @@ export default {
     _Uniforms: 'Uniforms',
     '_Set number [UNIFORM] of [TARGET] to [VALUE]':
       'Set number [UNIFORM] of [TARGET] to [VALUE]',
+
     '_Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]':
       'Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]',
+
     '_Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]':
       'Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]',
+
     '_Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]':
       'Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]',
+
     '_Set matrix [UNIFORM] of [TARGET] to [MATRIX]':
       'Set matrix [UNIFORM] of [TARGET] to [MATRIX]',
+      
     '_Set texture [UNIFORM] of [TARGET] to [TEXTURE]':
       'Set texture [UNIFORM] of [TARGET] to [TEXTURE]',
 
@@ -58,14 +63,19 @@ export default {
     _Uniforms: '统一变量',
     '_Set number [UNIFORM] of [TARGET] to [VALUE]':
       '将 [TARGET] 的统一变量 [UNIFORM] 设置为 [VALUE]',
+
     '_Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]':
       '将 [TARGET] 的二维向量 [UNIFORM] 设置为 [VALUE1][VALUE2]',
+
     '_Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]':
       '将 [TARGET] 的三维向量 [UNIFORM] 设置为 [VALUE1][VALUE2][VALUE3]',
+
     '_Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]':
       '将 [TARGET] 的四维向量 [UNIFORM] 设置为 [VALUE1][VALUE2][VALUE3][VALUE4]',
+
     '_Set matrix [UNIFORM] of [TARGET] to [MATRIX]':
       '将 [TARGET] 的矩阵 [UNIFORM] 设置为 [MATRIX]',
+
     '_Set texture [UNIFORM] of [TARGET] to [TEXTURE]':
       '将 [TARGET] 的纹理 [UNIFORM] 设置为 [TEXTURE]',
 
@@ -97,14 +107,19 @@ export default {
     _Uniforms: 'Uniforms',
     '_Set number [UNIFORM] of [TARGET] to [VALUE]':
       'Tetapkan nombor [UNIFORM] daripada [TARGET] kepada [VALUE]',
+
     '_Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]':
       'Tetapkan vektor 2 [UNIFORM] daripada [TARGET] kepada [VALUE1][VALUE2]',
+
     '_Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]':
       'Tetapkan vektor 3 [UNIFORM] daripada [TARGET] kepada [VALUE1][VALUE2][VALUE3]',
+
     '_Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]':
       'Tetapkan vektor 4 [UNIFORM] daripada [TARGET] kepada [VALUE1][VALUE2][VALUE3][VALUE4]',
+
     '_Set matrix [UNIFORM] of [TARGET] to [MATRIX]':
       'Tetapkan matriks [UNIFORM] daripada [TARGET] kepada [MATRIX]',
+
     '_Set texture [UNIFORM] of [TARGET] to [TEXTURE]':
       'Tetapkan tekstur [UNIFORM] daripada [TARGET] kepada [TEXTURE]',
 
@@ -112,6 +127,7 @@ export default {
     '_All textures': 'Semua tekstur',
     '_Delete all textures': 'Padam semua tekstur',
     '_Delete texture called [NAME]': 'Padam tekstur dipanggil [NAME]',
+
     '_Create/Update texture called [NAME] with [TEXTURE]':
       'Cipta/Kemas kini tekstur dipanggil [NAME] dengan [TEKSTUR]'
   }

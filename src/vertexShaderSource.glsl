@@ -83,3 +83,7 @@ void main() {
 	vUv = a_texCoord;
 	#endif
 }
+
+// copy pasted from scratch
+// when custom vertex shaders are a thing, please yell at fath11 to make more built-in shaders for debugging purposes
+// he needs to get yelled at

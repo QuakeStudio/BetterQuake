@@ -10,6 +10,8 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
   class BetterQuake {
     constructor(runtime) {
       this.runtime = runtime
+
+      //usefull for integration with other extensions
       if (!this.runtime.QuakeManager) this.runtime.QuakeManager = {}
 
       this.runtime.QuakeManager.loadedShaders = []
@@ -25,7 +27,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
         ? this.runtime.renderer.getSkinClass()
         : null
 
-      const oldDrawThese = this.runtime.renderer._drawThese // TODO: If you do not use _drawThese then just remove it
+      const oldDrawThese = this.runtime.renderer._drawThese /** @todo If you do not use _drawThese then just remove it */
       // However this is not recommended
       this.newDrawThese = (drawables, drawMode, projection, opts = {}) => {
         const renderer = this.runtime.renderer
@@ -103,7 +105,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
             drawable.injectExtraEffectUniforms(uniforms)
           }
 
-          // Our custom shader
+          // If drawable has its own shader, use it
           const drawableShader =
             runtime.QuakeManager.loadedShaders[drawable.BetterQuake?.shader]
           const newShader = drawableShader
@@ -158,7 +160,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
           }
 
           if (uniforms.u_skin || drawable.BetterQuake.uniforms.tDiffuse) {
-            //should bothh uniforms be available to use?
+            //should both uniforms be available to use?
             //the only reason i want to keep tDiffuse is for compatibility with GandiQuake
             twgl.setTextureParameters(
               gl,
@@ -504,7 +506,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       const shaderProgram = shaderInfo.programInfo.program
       const gl = this.gl
 
-      // Retrieve attached shaders
+      // Retrieve, detach, and delete attached shaders
       const shaders = gl.getAttachedShaders(shaderProgram)
       shaders.forEach(shader => {
         gl.detachShader(shaderProgram, shader)
@@ -529,6 +531,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
     reloadShader({ SHADER }) {
       let drawableShader = this.QuakeManager.loadedShaders[SHADER]
 
+      // find all drawables that is using the shader
       const shaderUsers = []
       for (let i = 0; i < this.runtime.renderer._allDrawables.length; i++) {
         const drawable = this.runtime.renderer._allDrawables[i]
@@ -537,12 +540,15 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
         }
       }
 
+      // if shader already exist, remove it
+      // otherwise, set it to an empty object
       if (drawableShader) {
         this.removeShader({ SHADER })
       } else {
         drawableShader = {}
       }
 
+      // retrieve shader source code
       const asset = this.runtime.getGandiAssetContent
         ? this.runtime.getGandiAssetContent(SHADER)
         : null
@@ -550,6 +556,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
         drawableShader.source = asset.decodeText()
       }
 
+      // create shader program
       const programInfo = twgl.createProgramInfo(this.gl, [
         vertexShaderSource,
         SHADER === '__example__' ? fragmentShaderSource : drawableShader.source
@@ -562,16 +569,20 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       )
       drawableShader.programInfo = programInfo
 
+      // add shader to the list of loaded shaders
       this.QuakeManager.loadedShaders[SHADER] = drawableShader
 
+      // give each drawable the new shader
       shaderUsers.forEach(drawable => {
         drawable.BetterQuake = {}
         drawable.BetterQuake.shader = SHADER
         drawable.BetterQuake.uniforms = {
+          // not needed, but usefull for quick debugging
           u_color: [Math.random(), Math.random(), Math.random(), 1]
         }
       })
 
+      // tells the renderer to redraw
       this.runtime.renderer.dirty = true
     }
 
@@ -583,17 +594,18 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       const target = this._getTargetByIdOrName(TARGET, util)
       const drawable = this.runtime.renderer._allDrawables[target.drawableID]
 
+      // retrieve shader
       let drawableShader = this.QuakeManager.loadedShaders[SHADER]
 
+      // if shader doesnt exist, create it
       if (!drawableShader) {
         this.reloadShader({ SHADER })
         drawableShader = this.QuakeManager.loadedShaders[SHADER]
       }
 
-      if (!drawable.BetterQuake) {
-        drawable.BetterQuake = {}
-      }
+      if (!drawable.BetterQuake) drawable.BetterQuake = {};
 
+      // asign the drawable the desired shader
       drawable.BetterQuake.shader = SHADER
       drawable.BetterQuake.uniforms = {
         u_color: [Math.random(), Math.random(), Math.random(), 1]
@@ -602,9 +614,11 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       this.runtime.renderer.dirty = true
     }
 
+    // detach a shader from a target
     detachShader({ SHADER, TARGET }, util) {
       const target = this._getTargetByIdOrName(TARGET, util)
       const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+      /** @todo maybe check if the shader we're detaching are used anywhere else? if not in use, delete it to save space? not sure really */
       if (drawable.BetterQuake?.shader === SHADER) {
         delete drawable.BetterQuake
       }
@@ -647,7 +661,6 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       const drawable = this.runtime.renderer._allDrawables[target.drawableID]
       if (!drawable.BetterQuake) return
 
-      //copy pasted from pen+. cmon, i cant bother to write it myself when ctrl+c ctrl+v do the job uwu
       let converted = JSON.parse(MATRIX)
 
       if (!Array.isArray(converted)) return
@@ -687,23 +700,35 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
 
     createUpdateTexture({ NAME, TEXTURE }, util) {
       const textureName = Scratch.Cast.toString(NAME)
+
+      // if texture already exist, delete it
       this.deleteTexture(textureName)
+
+      // check if its a gandi asset
+      // i think its called md5 hash because it uses md5 hash to store assets, idk
       if (/(.*?)\.(png|svg|jpg|jpeg)/.test(String(TEXTURE))) {
+        // get the id of the asset and its file extention
         const id = String(TEXTURE).split('.')[0]
         const ext = String(TEXTURE).split('.')[1]
+
+        // taken directly from Async Asset extension
+        // thanks to whoever decides its a good idea to make it open source because it IS a good idea
         const assetType =
           ext === 'svg'
             ? this.runtime.storage.AssetType.ImageVector
             : this.runtime.storage.AssetType.ImageBitmap
+
         const asset = this.runtime.storage
           .load(assetType, id, ext)
           .then(asset => {
             const texture = twgl.createTexture(this.gl, {
               src: asset.encodeDataURI()
             })
+            // save the texture
             this.QuakeManager.textures[textureName] = texture
           })
       } else {
+        // assume its a data uri and just create the texture directly
         const texture = twgl.createTexture(this.gl, { src: TEXTURE })
         this.QuakeManager.textures[textureName] = texture
       }
@@ -720,16 +745,17 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       return target
     }
 
+    // get a list of all the sprites
     _getSpriteMenu() {
       const { targets } = this.runtime
-      // 跳过舞台
+      // skip the stage
       const menu = targets
         .filter(target => !target.isStage && target.isOriginal)
         .map(target => ({
           text: target.sprite.name,
           value: target.sprite.name
         }))
-      // 空检查
+      // check if there is no sprite
       if (menu.length === 0) {
         menu.push({
           text: '-',
@@ -739,6 +765,9 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       return menu
     }
 
+    // get a list of all the drawables
+    // like sprites, stage
+    /** @todo add pen and video layer next, not sure about canvas layer tho since idk how it works */
     _getDrawablesMenu() {
       const menu = this._getSpriteMenu()
       if (!this.runtime._editingTarget) return menu
@@ -763,6 +792,8 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       return menu
     }
 
+    // get a list of all the shaders
+    /** @todo separate vertex and fragment shaders */
     _shaderList() {
       const list = this.runtime.getGandiAssetsFileList
         ? this.runtime.getGandiAssetsFileList('glsl').map(item => item.fullName)
@@ -776,9 +807,12 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
     }
   }
 
+  // for compatibility with Turbowarp
+  // but its not the priority rn
   if (Scratch.vm?.runtime) {
     Scratch.extensions.register(new BetterQuake(Scratch.vm.runtime))
   } else {
+    /** @todo maybe put this in another file? cant decide */
     window.tempExt = {
       Extension: BetterQuake,
       info: {
@@ -805,6 +839,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
         ]
       },
       l10n: {
+        // ig no ones translating this since its under 900 lines of code :,)
         'zh-cn': {
           'BetterQuake.extensionName': 'Better Quake',
           'BetterQuake.description': 'Better shader loader'
