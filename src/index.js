@@ -564,12 +564,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
         vertexShaderSource,
         SHADER === '__example__' ? fragmentShaderSource : drawableShader.source
       ])
-      this.gl.useProgram(programInfo.program)
-      twgl.setBuffersAndAttributes(
-        this.gl,
-        programInfo.program,
-        this.runtime.renderer._bufferInfo
-      )
+      
       drawableShader.programInfo = programInfo
 
       // add shader to the list of loaded shaders
