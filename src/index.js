@@ -662,7 +662,9 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       let converted = JSON.parse(MATRIX)
 
       if (!Array.isArray(converted)) return
-      converted = converted.map(parseFloat)
+      converted = converted.map(function (str) {
+        return parseFloat(str)
+      })
 
       drawable.BetterQuake.uniforms[UNIFORM] = converted
     }
