@@ -41,7 +41,7 @@ Fork this repository and modify `src/l10n.json`. DO NOT edit the code.
 ### Build
 
 - Build: `npm run build`
-- Development server: `npm run start` (Extension: `http://localhost:8080/index.global.js`)
+- Development server: `npm run start` (Extension: `http://localhost:8000/withL10n.global.js`)
 
 ---
 

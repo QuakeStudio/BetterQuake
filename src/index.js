@@ -159,6 +159,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
             drawable.BetterQuake.uniforms.time =
               this.runtime.ioDevices.clock.projectTimer()
             drawable.BetterQuake.uniforms.tDiffuse = uniforms.u_skin
+            drawable.BetterQuake.uniforms.Resolution = [gl.canvas.clientWidth, gl.canvas.clientHeight]
             Object.assign(uniforms, drawable.BetterQuake.uniforms)
           }
 
@@ -400,6 +401,27 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
               MATRIX: {
                 type: Scratch.ArgumentType.STRING,
                 defaultValue: '[[], []]'
+              }
+            }
+          },
+          {
+            opcode: 'setArray',
+            blockType: Scratch.BlockType.COMMAND,
+            text: Scratch.translate(
+              'Set array [UNIFORM] of [TARGET] to [ARRAY]'
+            ),
+            arguments: {
+              UNIFORM: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: 'Uniform'
+              },
+              TARGET: {
+                type: Scratch.ArgumentType.STRING,
+                menu: 'DRAWABLES_MENU'
+              },
+              ARRAY: {
+                type: Scratch.ArgumentType.STRING,
+                defaultValue: '[]'
               }
             }
           },
@@ -667,6 +689,14 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       })
 
       drawable.BetterQuake.uniforms[UNIFORM] = converted
+    }
+
+    setArray({ UNIFORM, TARGET, ARRAY }, util) {
+      const target = this._getTargetByIdOrName(TARGET, util)
+      const drawable = this.runtime.renderer._allDrawables[target.drawableID]
+      if (!drawable.BetterQuake) return
+
+      drawable.BetterQuake.uniforms[UNIFORM] = ARRAY
     }
 
     setTexture({ UNIFORM, TARGET, TEXTURE }, util) {

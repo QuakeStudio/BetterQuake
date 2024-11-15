@@ -1,6 +1,6 @@
 {
   "name": "better-quake",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Better shader loader.",
   "main": "dist/index.js",
   "scripts": {
