@@ -623,7 +623,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
         drawableShader = this.QuakeManager.loadedShaders[SHADER]
       }
 
-      if (!drawable.BetterQuake) drawable.BetterQuake = {};
+      if (!drawable.BetterQuake) drawable.BetterQuake = {}
 
       // asign the drawable the desired shader
       drawable.BetterQuake.shader = SHADER
@@ -726,7 +726,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       this.QuakeManager.textures = []
     }
 
-    createUpdateTexture({ NAME, TEXTURE }, util) {
+    createUpdateTexture({ NAME, TEXTURE }) {
       const textureName = Scratch.Cast.toString(NAME)
 
       // if texture already exist, delete it
@@ -746,7 +746,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
             ? this.runtime.storage.AssetType.ImageVector
             : this.runtime.storage.AssetType.ImageBitmap
 
-        const asset = this.runtime.storage
+        this.runtime.storage
           .load(assetType, id, ext)
           .then(asset => {
             const texture = twgl.createTexture(this.gl, {
