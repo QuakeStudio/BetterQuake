@@ -869,11 +869,11 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       l10n: {
         // ig no ones translating this since its under 900 lines of code :,)
         'zh-cn': {
-          'BetterQuake.extensionName': '雷神 Pro',
+          'BetterQuake.extensionName': '雷神 Pro V1.1',
           'BetterQuake.description': '更好的着色加载器'
         },
         en: {
-          'BetterQuake.extensionName': 'Better Quake',
+          'BetterQuake.extensionName': 'Better Quake V1.1',
           'BetterQuake.description': 'Better shader loader'
         }
       }
