@@ -685,7 +685,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
 
       if (!Array.isArray(converted)) return
       converted = converted.map(function (str) {
-        return parseInt(str)
+        return parseFloat(str)
       })
 
       drawable.BetterQuake.uniforms[UNIFORM] = converted
