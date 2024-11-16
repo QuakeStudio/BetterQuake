@@ -130,5 +130,30 @@ export default {
 
     '_Create/Update texture called [NAME] with [TEXTURE]':
       'Cipta/Kemas kini tekstur dipanggil [NAME] dengan [TEKSTUR]'
-  }
+  },
+      uk: {
+         _extensionName: "QuakeFragmment",
+         _me: "я",
+         _stage: "етап",
+         _example: "Приклад",
+         _Enable: "Увімкнути",
+         _Disable: "Вимкнути",
+         "_[SHOULD] auto re-render": "[ПОВИНЕН] ауто повтор-рендеринг",
+         "_All loaded shaders": "Всі провантажені шейдери",
+         "_Remove [SHADER]": "Прибрати [ШЕЙДЕР]",
+         "_Reload [SHADER]": "Повторити [ШЕЙДЕР]",
+         "_Apply [SHADER] to [TARGET]": "Застосувати [ШЕЙДЕР] до [ЦІЛЬ]",
+         "_Detach [SHADER] from [TARGET]": "Від'єднати [ШЕЙДЕР] від [ЦІЛЬ]",
+         _Uniforms: "Уніформи",
+         "_Set number [UNIFORM] of [TARGET] to [VALUE]": "Надати число [УНІФОРМА] від [ЦІЛЬ] до [ЗНАЧЕННЯ]",
+         "_Set vector 2 [UNIFORM] of [TARGET] to [VALUE1][VALUE2]": "Встановити вектор 2 [УНІФОРМА] від [ЦІЛЬ] до [ЗНАЧЕНЯ1][ЗНАЧЕННЯ2]",
+         "_Set vector 3 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3]": "Надати вектор 3 [УНІФОРМА] від [ЦІЛЬ] до [ЗНАЧЕННЯ1][ЗНАЧЕННЯ2][ЗНАЧЕННЯ3]",
+         "_Set vector 4 [UNIFORM] of [TARGET] to [VALUE1][VALUE2][VALUE3][VALUE4]": "Надати вектор 4 [УНІФОРМА] від [ЦІЛЬ] до [ЗНАЧЕННЯ1][ЗНАЧЕННЯ2][ЗНАЧЕННЯ3][ЗНАЧЕННЯ4]",
+         "_Set matrix [UNIFORM] of [TARGET] to [MATRIX]": "Надати матрицю [УНІФОРМА] від [ЦІЛЬ] до [МАТРИЦЯ]",
+         "_Set texture [UNIFORM] of [TARGET] to [TEXTURE]": "Надати текстуру [УНІФОРМА] від [ЦІЛЬ] до [ТЕКСТУРА]",
+         _Textures: "Текстури",
+         "_All textures": "Всі текстури",
+         "_Delete all textures": "Видалити всі текстури",
+         "_Delete texture called [NAME]": "Видалити текстуру, названу як [НАЗВА]",
+         "_Create/Update texture called [NAME] with [TEXTURE]": "Створити/Оновити текстуру, названу як [НАЗВА] з [ТЕКСТУРА]"
 }
