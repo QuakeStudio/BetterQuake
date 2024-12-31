@@ -596,10 +596,7 @@ import BetterQuakeIcon from './assets/BetterQuakeIcon.svg'
       shaderUsers.forEach(drawable => {
         drawable.BetterQuake = {}
         drawable.BetterQuake.shader = SHADER
-        drawable.BetterQuake.uniforms = {
-          // not needed, but usefull for quick debugging
-          u_color: [Math.random(), Math.random(), Math.random(), 1]
-        }
+        drawable.BetterQuake.uniforms = {}
       })
 
       // tells the renderer to redraw
